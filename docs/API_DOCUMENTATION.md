@@ -1,17 +1,12 @@
-# API Documentation
+# SecondServe local API
 
-Base: same-origin local Node server. The key is private in `.env` and never sent to browser code.
+All endpoints are served by the local Node process. Demo workflow routes require `x-secondserve-session` from the demo role picker. This header is not real authentication.
 
-## `GET /api/factorysight/status`
+- `GET /api/secondserve/status` — model feature flag and local storage/demo metadata.
+- `POST /api/secondserve/session` — select a demo role; recipient role also supplies a seeded organization ID.
+- `GET /api/secondserve/state` — current listing, candidates, offers, events, audit entries, and impact grouped by unit.
+- `POST /api/secondserve/demo/load` — coordinator loads a seeded scenario.
+- Other `/api/secondserve/*` routes implement listing intake, decision, offer, recipient response, pickup report, and coordinator verification. See `server.mjs` for request shapes and role checks.
+- `POST /api/secondserve/intake-draft` — optional model extraction from user-provided text when enabled. Returns a draft requiring human confirmation; does not mutate workflow state.
 
-Returns `{ "visionEnabled": boolean, "samEnabled": boolean, "model": "muse-spark-1.3" }`. Does not call a model.
-
-## `POST /api/factorysight/analyze`
-
-Requires `FACTORYSIGHT_VISION_ENABLED=true` and `MODEL_API_KEY`. JSON body: `reference`, `inspection` (JPEG/PNG/WebP base64 data URLs, at most 5 MB each), `productType` (1–60 chars), `profile` (up to 80 chars), and `note` (up to 300 chars). Upstream is `POST https://api.meta.ai/v1/chat/completions`, model `muse-spark-1.3`, with two `user` image parts and a strict JSON schema. Returns candidate findings with category, visible evidence, comparison, verification step, qualitative uncertainty, and normalized approximate box. Empty findings are not a pass result. Upstream bodies and stack traces are not returned.
-
-## `POST /api/factorysight/segment`
-
-Requires `FACTORYSIGHT_SAM_ENABLED=true` and `MODEL_API_KEY`. JSON body: `image` data URL and a 1–80 character noun phrase `concept`. Upstream is a streaming `sam-3.1` Responses API call. `@meta-sam/parser` decodes the stream; response includes mask SVG paths and box geometry. Segmentation is not defect classification. Request can consume credits.
-
-Both POST routes are called only from explicit UI actions. The UI consent covers transmission to Meta; status check and local comparison do not send images.
+These APIs are for a local demo only. Do not deploy them as-is or use them for real food-safety decisions.

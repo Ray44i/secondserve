@@ -1,17 +1,17 @@
-# Architecture
+# SecondServe architecture
 
 ## Runtime
 
-Browser UI (`factorysight.html`, `factorysight.css`, `factorysight.js`) runs on a dependency-light Node HTTP server (`server.mjs`). Browser validation checks decoded image type/size/dimensions; server checks data URLs, limits, fields, upstream responses, and JSON findings. The private API key is read only server-side from ignored `.env`.
+Node.js 22.9+ serves a browser-native interface and JSON API. `server.mjs` owns a local SQLite `DatabaseSync` instance and keeps the Meta API key server-side. Domain transitions live in `secondserve-domain.mjs`; schema is in `secondserve-schema.sql`. The application is a local, single-process demo.
 
-## Data flow
+## Data and transitions
 
-- Local pair comparison uses Canvas; the diff is a heuristic visualization only.
-- Muse Spark receives resized reference + inspection photos after the checkbox and Analyze click. Server validates the schema and returns suggestions only.
-- SAM 3.1 receives a resized inspection image and a short product-type prompt after consent and a separate Segment click. Its official parser decodes streamed geometry. Masks locate the component, not defects.
-- Inspector decisions and timestamp history are held in page memory, then may be saved as metadata in browser localStorage. Raw images are never persisted by the app.
-- Print view forms a report from the current session and human decisions. Reopened local records do not retain photos.
+Organizations and recipient profiles are seeded fictional fixtures. Listings have explicit date type, storage, condition, allergens, attestation, location, deadline, and preference fields. The decision agent first checks hard eligibility/safety constraints, then ranks remaining candidates. Accepting an offer reserves capacity. Cancellation releases it and reruns matching while excluding the failed partner. Pickup report remains unverified until coordinator confirms quantity, which creates a verified impact record.
 
-## Production boundary
+## Model boundary
 
-No SQL database, cloud object storage, authentication, secure multi-user RBAC, audit server, calibrated tolerances, or factory-device integration is implemented. Do not treat this workstation demo as a production QMS.
+Muse Spark is called only by an explicit intake action when configured. The user-authored note is treated as untrusted data; the API requests constrained structured output and the server validates enumerations and lengths. It creates a draft only; it cannot create a listing or send an offer. Human review is mandatory. No image is sent or analyzed.
+
+## Authentication and deployment boundary
+
+Role sessions are in-memory demo tokens; anyone can select any demo role. This is not secure authentication/RBAC. SQLite is local and intended for one server process; no hosted database, migration process, account isolation, or deployment hardening exists. Offer dispatch is local simulation, with no outbound messages.

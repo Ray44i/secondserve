@@ -1,5 +1,5 @@
 {
-  "name": "factorysight",
+  "name": "secondserve",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -8,7 +8,7 @@
     "test": "node --test"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.9"
   },
   "dependencies": {
     "@meta-sam/parser": "^0.1.0",

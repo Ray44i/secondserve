@@ -1,12 +1,7 @@
-# Three-minute Demo Script (draft)
+# SecondServe demo script
 
-Only show actual consented outputs. If no successful model call is confirmed on the provided images, say the integration is available but not demonstrated.
+“Surplus food is time-sensitive. A match is only useful if a verified recipient can collect it. SecondServe checks the reported batch and partner constraints, gives the coordinator an explainable shortlist, and recovers if the first partner cancels.”
 
-- **0:00–0:20** — “Small shops need a fast way to compare a part against an approved reference without treating AI as the inspector.”
-- **0:20–0:45** — Enter product ID/profile; select the real known-good and inspected bracket photos. State the capture conditions.
-- **0:45–1:05** — Show side-by-side and overlay/difference cue. Explain lighting/angle sensitivity; emphasize this does not prove a defect.
-- **1:05–1:40** — If authorized and successful, show Muse Spark's visible evidence, approximate region, uncertainty, and verification step. Otherwise skip this and state it was not verified.
-- **1:40–2:00** — If SAM has a successful run, show component mask and say segmentation only locates the component.
-- **2:00–2:30** — Inspector confirms/rejects/marks uncertain, showing decision history separate from model observation.
-- **2:30–2:50** — Save local metadata and print the report with human status distinct.
-- **2:50–3:00** — State constraints: no certification, no dataset accuracy claim, local-only prototype.
+Load the recovery scenario. Run the decision agent and point out the hard eligibility checks. Dispatch the first offer and switch to Charity A. Accept, then cancel. Return to the coordinator and show capacity released, the recovery event, and the replacement offer to Community Kitchen B. Accept as Kitchen B, report a pickup quantity, and show that reported food is not yet in impact. Verify a quantity as coordinator; only the verified amount appears, grouped by its unit.
+
+Close by showing the review scenario: missing handling facts stop automatic matching. Muse Spark can draft structured intake from an explicitly submitted text note, but its output remains unverified. All partner records, availability, distances, and notifications in the demo are simulated.
