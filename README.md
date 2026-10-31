@@ -1,6 +1,6 @@
 # Tremoroom
 
-**See what could move. Know what to do next.** Tremoroom is a solo-built room-scale earthquake-preparedness prototype. It turns common household questions into an explainable checklist, lets residents rehearse illustrative what-if scenarios, and creates a take-home room action card.
+**See what could move. Know what to check next.** Tremoroom helps renters and families in earthquake-prone homes turn room-level questions into clear, human-verified actions. It combines consent-based visual observations, illustrative what-if scenarios, and a take-home action card.
 
 ## Run locally
 
@@ -10,9 +10,9 @@ Requires Node.js 20 or newer. Run npm start and open http://127.0.0.1:4173. The 
 
 1. Choose Resident or Specialist reviewer. This demo sign-in switches local views only; it is not authentication.
 2. Choose a room photo for a local preview. If room analysis has been deliberately enabled by the operator, read and check the consent box, then click Analyze; this sends a resized image to Meta Model API and may use credits. Otherwise, the photo remains local. Then select Light, Moderate, or Strong motion and a Main shaking, Aftershock, or Doorway blocked what-if.
-3. Run the 8-second, four-phase illustration. Watch the bookcase and mirror move according to the chosen scenario and the sample mitigation checkboxes.
-4. Review why each item was flagged. Residents can mark sample actions; the Specialist view is read-only for resident actions.
-5. Build a personal room action card from the still-open flags. Print it or save it as PDF from the browser print dialog. The card is generated locally.
+3. Run the 8-second, four-phase illustration. Watch the bookcase and mirror move according to the chosen scenario and sample confirmations.
+4. Review why each item was flagged. After checking the real room, residents can mark actions; the interface shows counts of marked and open items, never a safety score. The Specialist view is read-only for resident actions.
+5. Build a personal room action card from open sample actions and, after a successful scan, model-suggested checks. Print it or save it as PDF from the browser print dialog. The card is generated locally.
 6. If no live scan is enabled, explain that the room, movement, observations and checklist weights are scripted sample data. If scanning is enabled, identify model findings as candidate visual observations, show uncertainty, then build the action card so viewers can see model suggestions become human-verified next steps.
 
 ## Product boundaries
@@ -25,7 +25,7 @@ Room photo analysis uses a separate disabled-by-default switch: `TREMOROOM_VISIO
 
 ## Hackathon fit
 
-- **Impact (30%)**: turn earthquake preparedness into understandable, room-level next steps.
+- **Impact (30%)**: focus on renters and families in earthquake-prone homes, turning visible room questions into human-verified next steps.
 - **Meta AI tooling (25%)**: an opt-in Meta Model API vision endpoint analyzes a resized room photo and returns candidate objects, normalized boxes, conditional possibilities, suggested checks, and uncertainties. Only claim live use after showing a successful scan in the recording.
 - **Technical depth (20%)**: scenario state, explainable checklist rules, role-specific demo access, resident correction, and a locally generated action card.
 - **Demo (25%)**: a clear room scene, selectable what-ifs, visible motion, mitigation, and a printable take-home outcome.

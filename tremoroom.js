@@ -30,16 +30,20 @@ $('switchRole').addEventListener('click', () => {
 });
 function calculate() {
   const anchor = $('anchor').checked, move = $('move').checked, exit = $('exit').checked;
-  const score = 62 + (anchor ? 17 : 0) + (move ? 10 : 0) + (exit ? 3 : 0);
-  const stability = 42 + (anchor ? 43 : 0), objects = 58 + (move ? 29 : 0);
-  $('score').textContent = score; $('ring').style.setProperty('--n', score);
-  $('stab').textContent = stability + '%'; $('stabbar').style.width = stability + '%';
-  $('objects').textContent = objects + '%'; $('objbar').style.width = objects + '%';
-  $('status').textContent = score >= 90 ? 'ACTIONS CONFIRMED' : score >= 75 ? 'IMPROVING' : 'REVIEW NEEDED';
-  $('summary').textContent = score >= 90 ? 'Sample mitigations are marked complete. Recheck them in the real room.' : score >= 75 ? 'A sample improvement is marked. Review remaining items in the room.' : 'Verify flagged items in the real room before relying on this walkthrough.';
+  const confirmed = Number(anchor) + Number(move) + Number(exit);
+  const pending = 3 - confirmed;
+  $('pendingCount').textContent = pending;
+  $('pendingCountLabel').textContent = pending === 1 ? '1 action' : pending + ' actions';
+  $('confirmedCount').textContent = confirmed + ' of 3';
+  $('ring').style.setProperty('--n', Math.round(confirmed / 3 * 100));
+  $('progressBar').style.width = Math.round(confirmed / 3 * 100) + '%';
+  $('status').textContent = pending ? pending + ' TO VERIFY' : 'ALL 3 MARKED COMPLETE';
+  $('summary').textContent = pending
+    ? confirmed + ' of 3 sample actions marked complete. Check the actual room before marking an action.'
+    : 'All three sample actions are marked complete. This checklist does not rate room safety.';
   $('rBooks').classList.toggle('resolved', anchor); $('rMirror').classList.toggle('resolved', move); $('rExit').classList.toggle('resolved', exit);
   $('queue').textContent = String(Number(!anchor) + Number(!move)).padStart(2, '0');
-  $('recalcText').textContent = 'Checklist updated from sample confirmations. Score: ' + score + '/100. Weights are illustrative, not validated.';
+  $('recalcText').textContent = 'Progress updated: ' + confirmed + ' of 3 sample actions marked. Confirm each in the real room.';
 }
 $('recalcBtn').addEventListener('click', () => { if (!roleIndex) { calculate(); toast('Sample checklist updated. Confirm changes in the real room.'); } });
 document.querySelectorAll('[data-jump]').forEach((button) => button.addEventListener('click', () => document.getElementById(button.dataset.jump).scrollIntoView({ behavior: 'smooth' })));

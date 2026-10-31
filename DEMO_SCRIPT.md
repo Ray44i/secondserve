@@ -11,11 +11,11 @@
 
 | Time | On screen | Suggested narration |
 |---|---|---|
-| 0:00–0:20 | Opening view and room walkthrough | “Earthquake preparedness often stays abstract. Tremoroom starts with one room and turns visible questions into small actions a household can check.” |
+| 0:00–0:20 | Opening view and room walkthrough | “Renters and families often do not know which room changes are practical. Tremoroom starts with one room and turns visible questions into small actions a household can verify.” |
 | 0:20–0:55 | Show photo scan result, candidate boxes, confidence and uncertainty | “With consent, Meta Model API suggests candidate objects from a room photo. These are visual observations, not a structural inspection. The resident checks what the model may have missed or misunderstood.” |
 | 0:55–1:25 | Select **Strong** and **Aftershock**; run the scenario | “The what-if makes the review concrete: we can rehearse an initial movement and a follow-up. This is an authored illustration, not earthquake physics or a damage forecast.” |
-| 1:25–1:55 | Review flags and mark one sample mitigation | “Each flag explains why it appeared and gives a practical check. The resident confirms the real condition; the demo score is illustrative and never says a room is safe.” |
-| 1:55–2:25 | Build the room card; show scan suggestions included | “The card combines open sample actions with the photo’s candidate checks, so the person leaves with a short list to verify. The card is built in the browser.” |
+| 1:25–1:55 | Review flags and confirm one checked action | “Each flag explains why it appeared and gives a practical check. Counts show only which sample actions the resident marked; the app never scores room safety.” |
+| 1:55–2:25 | Build the room card; show scan suggestions included | “The card combines open sample actions with the photo’s candidate checks, so the person leaves with a short list to verify. It is built in the browser.” |
 | 2:25–2:45 | Switch to Specialist reviewer and show read-only state | “A reviewer can inspect unresolved items while resident controls become read-only. This prototype simulates roles locally; it does not claim secure accounts or real specialist dispatch.” |
 | 2:45–3:00 | Return to the results/disclaimer | “Tremoroom uses AI to notice, transparent prompts to explain, and human confirmation to decide the next step. It supports preparedness; it does not replace local authorities or qualified professionals.” |
 
