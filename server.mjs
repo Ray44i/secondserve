@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import OpenAI from 'openai';
 import { decodeMaskToSVGPath, parseImageStream, recordsOfKind } from '@meta-sam/parser';
 import { decodeImageDataUrl as decodeImageFromBytes, validateFactorySight as validateFactorySightData, validateInspectionFields } from './factorysight-validation.mjs';
-import { acceptOffer as secondServeAcceptOffer, cancelAcceptedOffer, createListing as secondServeCreateListing, declineOffer as secondServeDeclineOffer, dispatchOffer as secondServeDispatchOffer, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, runDecisionAgent, verifyPickup } from './secondserve-domain.mjs';
+import { acceptOffer as secondServeAcceptOffer, cancelAcceptedOffer, createListing as secondServeCreateListing, declineOffer as secondServeDeclineOffer, dispatchOffer as secondServeDispatchOffer, getNearbyDemoListings, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, runDecisionAgent, verifyPickup } from './secondserve-domain.mjs';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
 try {
@@ -357,9 +357,10 @@ async function secondServeRoute(request, response, url) {
   const path = url.pathname, method = request.method;
   try {
     if (method === 'GET' && path === '/api/secondserve/status') return sendJson(response, 200, { modelEnabled: secondServeModelEnabled, model: process.env.MODEL_API_MODEL || 'muse-spark-1.3', persistence: 'sqlite', simulatedNetwork: true });
+    if (method === 'GET' && path === '/api/secondserve/nearby') return sendJson(response, 200, { listings: getNearbyDemoListings(), demo: true, source: 'fictional-seed-data', reservationEnabled: false });
     if (method === 'GET' && path === '/api/secondserve/state') return sendJson(response, 200, getSecondServeState(secondServeDb));
     if (method === 'POST' && path === '/api/secondserve/session') {
-      const body = await readJson(request, 2048), roles = ['donor','coordinator','recipient'];
+      const body = await readJson(request, 2048), roles = ['neighbor','donor','coordinator','recipient'];
       if (!roles.includes(body.role)) return sendJson(response, 400, { error: 'Select donor, coordinator, or recipient demo access.' });
       let organizationId = null;
       if (body.role === 'recipient') {

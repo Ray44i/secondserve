@@ -3,6 +3,7 @@
 All endpoints are served by the local Node process. Demo workflow routes require `x-secondserve-session` from the demo role picker. This header is not real authentication.
 
 - `GET /api/secondserve/status` — model feature flag and local storage/demo metadata.
+- `GET /api/secondserve/nearby` — fictional Kadıköy donation and discount sample listings for the food-finder view; reservations are disabled.
 - `POST /api/secondserve/session` — select a demo role; recipient role also supplies a seeded organization ID.
 - `GET /api/secondserve/state` — current listing, candidates, offers, events, audit entries, and impact grouped by unit.
 - `POST /api/secondserve/demo/load` — coordinator loads a seeded scenario.

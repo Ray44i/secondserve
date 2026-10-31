@@ -10,6 +10,17 @@ const localMinute = (iso) => { const parts = new Intl.DateTimeFormat('en-GB', { 
 const localDay = (iso) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso));
 const distanceKm = (aLat, aLon, bLat, bLon) => { const r = Math.PI / 180, dLat = (bLat - aLat) * r, dLon = (bLon - aLon) * r; const a = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(dLon / 2) ** 2; return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); };
 
+export function getNearbyDemoListings() {
+  const expires = (minutes) => new Date(Date.now() + minutes * 60_000).toISOString();
+  return [
+    { id:'market-bread', name:'Daily bread bundle', business:'Demo Bakery A', category:'Bakery', quantity:6, unit:'loaves', offerType:'donation', priceTry:null, location:'Moda, Kadıköy', lat:40.9848, lon:29.0269, pickupUntil:expires(55), note:'Same-day surplus. Confirm ingredients with the business before pickup.' },
+    { id:'market-produce', name:'Seasonal produce box', business:'Demo Market B', category:'Produce', quantity:3, unit:'kg', offerType:'discounted_sale', priceTry:45, location:'Yeldeğirmeni, Kadıköy', lat:40.9930, lon:29.0278, pickupUntil:expires(80), note:'Discounted demo price. Check produce condition at collection.' },
+    { id:'market-soup', name:'Vegetable soup portions', business:'Demo Kitchen C', category:'Prepared meals', quantity:12, unit:'portions', offerType:'donation', priceTry:null, location:'Osmanağa, Kadıköy', lat:40.9892, lon:29.0301, pickupUntil:expires(45), note:'Chilled demo listing. Ask about allergens and storage history.' },
+    { id:'market-yogurt', name:'Yogurt multipack', business:'Demo Grocer D', category:'Dairy', quantity:5, unit:'packs', offerType:'discounted_sale', priceTry:35, location:'Caferağa, Kadıköy', lat:40.9796, lon:29.0321, pickupUntil:expires(95), note:'Discounted demo price. Verify date and cold-chain details with the shop.' },
+    { id:'market-pastry', name:'Pastry end-of-day box', business:'Demo Bakery E', category:'Bakery', quantity:8, unit:'pieces', offerType:'discounted_sale', priceTry:30, location:'Fenerbahçe, Kadıköy', lat:40.9740, lon:29.0480, pickupUntil:expires(65), note:'End-of-day demo listing. Ingredients and handling require confirmation.' }
+  ];
+}
+
 export function initializeSecondServe(db, schemaSql) {
   db.exec(schemaSql);
   db.exec('PRAGMA foreign_keys = ON;');

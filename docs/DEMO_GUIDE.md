@@ -6,7 +6,7 @@ A bakery has 20 croissants and a short pickup window. The first partner accepts 
 
 ## Run of show
 
-- 0:00–0:20 — State the problem and disclose that all partner records are demo fixtures.
+- 0:00–0:20 — Show the nearby board, donation/discount filters, and map. Disclose that listings and pins are fictional demo fixtures.
 - 0:20–0:50 — Coordinator loads recovery and runs matching; show hard filters and score rationale.
 - 0:50–1:20 — Dispatch, switch to Charity A, accept, then cancel.
 - 1:20–1:50 — Return to coordinator; show released capacity, recovery event, and replacement offer.

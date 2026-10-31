@@ -1,6 +1,6 @@
 # SecondServe
 
-**Surplus food, routed with care.** SecondServe is a solo-builder prototype of an AI-assisted food rescue coordinator. It turns a surplus batch into a traceable workflow: confirm facts, hold unsafe or incomplete listings for human review, rank eligible recipient partners, dispatch a simulated offer, recover from a cancellation, and count food as rescued only after pickup quantity is verified.
+**Surplus food, routed with care.** SecondServe is a solo-builder prototype of an AI-assisted food rescue coordinator with a nearby surplus board for donation and discounted-food discovery. It turns a reported batch into a traceable workflow: confirm facts, hold incomplete listings for human review, rank eligible recipient partners, simulate offers, recover from cancellation, and count food as rescued only after pickup quantity is verified.
 
 ## Run locally
 
@@ -16,12 +16,13 @@ Open <http://127.0.0.1:4173>. The SQLite demo database is created under ignored 
 
 ## Demo workflow
 
-1. Choose **Rescue coordinator** and load the recovery scenario.
-2. Run the decision agent and review its hard constraints, candidate ranking, and exclusions.
-3. Dispatch the first offer. Switch to **Recipient partner**, choose Charity A, accept, then cancel it.
-4. Switch back to coordinator: the reservation is released and the recovery agent routes a replacement offer to Community Kitchen B.
-5. Accept the replacement, report a pickup as the recipient, and verify a quantity as coordinator. Only that verified quantity enters the impact ledger.
-6. Try the review scenario to see incomplete handling facts blocked from automatic matching.
+1. Choose **Find food nearby** to browse donation and discounted-food demo listings. Filter by offer type, food category, and distance radius; inspect the OpenStreetMap view. Optional browser location sorts the fictional pins by approximate distance.
+2. Choose **Rescue coordinator** and load the recovery scenario.
+3. Run the decision agent and review its hard constraints, candidate ranking, and exclusions.
+4. Dispatch the first offer. Switch to **Recipient partner**, choose Charity A, accept, then cancel it.
+5. Switch back to coordinator: the reservation is released and the recovery agent routes a replacement offer to Community Kitchen B.
+6. Accept the replacement, report a pickup as the recipient, and verify a quantity as coordinator. Only that verified quantity enters the impact ledger.
+7. Try the review scenario to see incomplete handling facts blocked from automatic matching.
 
 Offers and partner registry data are simulated; no outside organizations are contacted.
 
@@ -33,7 +34,7 @@ Set `MODEL_API_KEY` in local `.env` and `SECONDSERVE_MODEL_ENABLED=true`. The op
 
 - This is a single-process local prototype backed by SQLite, not a deployed multi-user service.
 - Login roles are demo role selectors, not authentication or production RBAC.
-- Recipient records, verification badges, coordinates, capacity, and availability are fictional demo fixtures. Distances are illustrative; there is no live geocoder or map.
+- Nearby businesses, products, prices, pickup windows, recipient records, verification badges, coordinates, capacity, and availability are fictional demo fixtures. OpenStreetMap provides real map tiles, but there is no live business inventory, geocoder, or booking flow. Location sorting is approximate; the location is kept in the current tab.
 - Notifications are simulated. No recipient receives an actual email, SMS, or push message.
 - Photos and image-based food inspection are not implemented. The intake model is text-only.
 - Split allocation requires coordinator review.

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { MATCH_WEIGHTS, acceptOffer, cancelAcceptedOffer, dispatchOffer, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, runDecisionAgent, verifyPickup } from '../secondserve-domain.mjs';
+import { MATCH_WEIGHTS, acceptOffer, cancelAcceptedOffer, dispatchOffer, getNearbyDemoListings, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, runDecisionAgent, verifyPickup } from '../secondserve-domain.mjs';
 
 function setup() {
   const db = new DatabaseSync(':memory:');
@@ -104,4 +104,12 @@ test('verified impact quantities are grouped by unit, never added together', () 
   insert.run('impact-kg',listing.id,offer.id,2.5,'kg',now);
   assert.deepEqual(getSecondServeState(db).impactSummary.verifiedByUnit,{kg:2.5,pieces:17});
   db.close();
+});
+
+test('nearby food board includes fictional donation and discounted pins with valid pickup windows', () => {
+  const listings=getNearbyDemoListings();
+  assert.equal(listings.length,5);
+  assert.deepEqual([...new Set(listings.map(item=>item.offerType))].sort(),['discounted_sale','donation']);
+  assert.ok(listings.every(item=>item.business.startsWith('Demo ')));
+  assert.ok(listings.every(item=>Number.isFinite(item.lat)&&Number.isFinite(item.lon)&&Date.parse(item.pickupUntil)>Date.now()));
 });

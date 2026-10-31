@@ -6,7 +6,7 @@ Deliver a clear, stable solo hackathon prototype for the Meta Global AI Develope
 
 ## Product thesis
 
-Food rescue fails when time-sensitive surplus is difficult to match and hand off reliably. SecondServe demonstrates a cautious coordinator agent that checks listing facts, ranks eligible partners, dispatches a simulated offer, recovers when a partner cancels, and records impact only when pickup is verified.
+Food rescue fails when time-sensitive surplus is difficult to discover, match, and hand off reliably. SecondServe pairs a nearby donation/discount food board with a cautious coordinator agent that checks listing facts, ranks eligible partners, dispatches a simulated offer, recovers when a partner cancels, and records impact only when pickup is verified.
 
 ## Demo-first scope
 
