@@ -13,6 +13,7 @@ function setRole(index, dismissGate) {
   $('roleDesc').textContent = specialist ? 'Specialist view · inspect resident confirmations and unresolved flags.' : 'Resident view · mark changes and request a review.';
   $('switchRole').textContent = specialist ? 'Switch to resident view ↗' : 'Switch to specialist view ↗';
   document.querySelectorAll('.check input').forEach((input) => { input.disabled = specialist; });
+  $('housingStatus').disabled = specialist;
   $('recalcText').textContent = specialist ? 'Resident actions are read-only in the specialist workspace.' : 'Select a mitigation to see how the sample checklist changes.';
   $('buildPlan').disabled = specialist;
   if (dismissGate) $('loginScreen').hidden = true;
@@ -118,8 +119,16 @@ $('quake').addEventListener('click', async () => {
 });
 $('buildPlan').addEventListener('click', () => {
   const steps = [];
-  if (!$('anchor').checked) steps.push('Check whether the tall bookcase is secured to the wall; ask a qualified local specialist if you are unsure.');
-  if (!$('move').checked) steps.push('Review the wall mirror near the bed and decide whether to move it or use suitable safety film.');
+  const housingStatus = $('housingStatus').value;
+  if (!$('anchor').checked) {
+    if (housingStatus === 'renter') steps.push('Ask your landlord or property manager about an approved way to secure the tall bookcase. Do not drill or alter the rental without permission; meanwhile, keep heavy items low.');
+    else if (housingStatus === 'owner') steps.push('Check whether the tall bookcase is secured to the wall; use suitable anchoring and ask a qualified local specialist if you are unsure.');
+    else steps.push('Check whether the tall bookcase is secured to the wall. If you rent, ask permission before drilling; keep heavy items low while you verify.');
+  }
+  if (!$('move').checked) {
+    if (housingStatus === 'renter') steps.push('Consider moving the mirror away from the bed. Before applying safety film or changing fixtures, check your lease or ask the property manager.');
+    else steps.push('Review the wall mirror near the bed and decide whether to move it or use suitable safety film.');
+  }
   if (!$('exit').checked) steps.push('Walk the real route to your exit and note anything that could block it.');
   if (latestRoomAnalysis) {
     latestRoomAnalysis.objects.forEach((item) => steps.push('Verify ' + item.name + ': ' + item.next_step));

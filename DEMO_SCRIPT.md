@@ -15,7 +15,7 @@
 | 0:20–0:55 | Show photo scan result, candidate boxes, confidence and uncertainty | “With consent, Meta Model API suggests candidate objects from a room photo. These are visual observations, not a structural inspection. The resident checks what the model may have missed or misunderstood.” |
 | 0:55–1:25 | Select **Strong** and **Aftershock**; run the scenario | “The what-if makes the review concrete: we can rehearse an initial movement and a follow-up. This is an authored illustration, not earthquake physics or a damage forecast.” |
 | 1:25–1:55 | Review flags and confirm one checked action | “Each flag explains why it appeared and gives a practical check. Counts show only which sample actions the resident marked; the app never scores room safety.” |
-| 1:55–2:25 | Build the room card; show scan suggestions included | “The card combines open sample actions with the photo’s candidate checks, so the person leaves with a short list to verify. It is built in the browser.” |
+| 1:55–2:25 | Choose renter context, then build the room card | “The renter card avoids unapproved drilling and turns open checks into practical next steps. After a successful scan, it can include candidate checks too. The card is built in the browser.” |
 | 2:25–2:45 | Switch to Specialist reviewer and show read-only state | “A reviewer can inspect unresolved items while resident controls become read-only. This prototype simulates roles locally; it does not claim secure accounts or real specialist dispatch.” |
 | 2:45–3:00 | Return to the results/disclaimer | “Tremoroom uses AI to notice, transparent prompts to explain, and human confirmation to decide the next step. It supports preparedness; it does not replace local authorities or qualified professionals.” |
 

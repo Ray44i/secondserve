@@ -12,7 +12,7 @@ Requires Node.js 20 or newer. Run npm start and open http://127.0.0.1:4173. The 
 2. Choose a room photo for a local preview. If room analysis has been deliberately enabled by the operator, read and check the consent box, then click Analyze; this sends a resized image to Meta Model API and may use credits. Otherwise, the photo remains local. Then select Light, Moderate, or Strong motion and a Main shaking, Aftershock, or Doorway blocked what-if.
 3. Run the 8-second, four-phase illustration. Watch the bookcase and mirror move according to the chosen scenario and sample confirmations.
 4. Review why each item was flagged. After checking the real room, residents can mark actions; the interface shows counts of marked and open items, never a safety score. The Specialist view is read-only for resident actions.
-5. Build a personal room action card from open sample actions and, after a successful scan, model-suggested checks. Print it or save it as PDF from the browser print dialog. The card is generated locally.
+5. Choose renter, owner, or unsure context, then build a room action card from open sample actions and, after a successful scan, model-suggested checks. Renter guidance avoids unapproved drilling and suggests asking the property manager. Print or save it as PDF; the card is generated locally.
 6. If no live scan is enabled, explain that the room, movement, observations and checklist weights are scripted sample data. If scanning is enabled, identify model findings as candidate visual observations, show uncertainty, then build the action card so viewers can see model suggestions become human-verified next steps.
 
 ## Product boundaries

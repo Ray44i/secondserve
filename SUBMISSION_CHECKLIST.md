@@ -17,6 +17,7 @@ The event instructions shared by the organizer specify four submission items and
 - [ ] Keep `.env.example` blank and disabled by default.
 - [ ] Remove temporary downloads, screenshots, private photos, generated credentials, and unrelated files from the staged changes.
 - [ ] Confirm the demo's sample scene and action counts are clearly labeled; role switching is simulated; live findings are candidate observations, not safety assessments.
+- [ ] Show the renter-specific room card: ask permission before drilling or changing fixtures, and use practical interim checks.
 - [ ] Confirm the submission URL, video, and repository all work from a clean logged-out session.
 
 ## Final five-minute check
