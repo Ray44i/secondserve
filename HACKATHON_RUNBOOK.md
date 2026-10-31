@@ -1,39 +1,35 @@
-# Hackathon demo notes
+# FactorySight Hackathon Runbook
 
-## Tremoroom
+## Product
 
-Tremoroom is an independent solo entry helping renters and families in earthquake-prone homes check practical room-level actions. Its distinctive demo loop is: consent to an optional photo analysis, rehearse an illustrative what-if, verify room questions, and leave with a personal action card.
+FactorySight is a solo, local-first visual inspection workstation. It compares a known-good part photo with an inspection photo, optionally requests Muse Spark observations and SAM 3.1 object segmentation, and keeps inspector decisions separate.
 
-The entry screen offers Resident and Specialist demo views. Residents can select a room photo for local preview. Live visual analysis is opt-in, disabled by default, and requires server configuration plus explicit consent and a button click; it sends a resized photo to Meta Model API and may use credits. Role state is simulated in this browser, not secure authentication or production RBAC. Resident marks sample actions; Specialist views them read-only and can add a local note. The sample room, action queue and action counts are fictional demonstration data.
+## Current workflow
 
-## Three-minute demo
+- Select product metadata and two controlled images.
+- Compare locally; difference view is a raw visual cue, not a defect classifier.
+- Check consent and explicitly request Muse Spark or SAM 3.1. Both can use credits.
+- Review candidate observations, human-confirm/reject/mark uncertain, save metadata and print a report.
+- Photos are held in memory only; history is localStorage metadata only.
 
-| Time | Show | Say |
-| --- | --- | --- |
-| 0:00–0:25 | Tremoroom identity and illustrated room | “Tremoroom is an independent room-readiness prototype. This is a sample room, not an AI scan.” |
-| 0:25–1:00 | Strong motion + Aftershock scenario | “This scripted what-if makes unsecured objects visible across two movements. It is not a damage prediction.” |
-| 1:00–1:30 | Doorway blocked scenario | “We do not invent a safe alternate route. The demo asks people to check their building’s approved guidance.” |
-| 1:30–2:10 | Review flags, confirm one checked action, update action counts | “The checklist reports only what the resident marked. It never rates the room's safety.” |
-| 2:10–2:35 | Build and print the room action card | “Open items become a locally generated checklist to take away. No room data is uploaded.” |
-| 2:35–3:00 | Specialist view and, if explicitly enabled, an authorized scan | “Specialist access is simulated. Vision outputs are candidate observations with uncertainty, not a safety inspection.” |
+## Meta model facts verified from official docs
 
-## Rubric story
+- Muse Spark `muse-spark-1.3`: image input via `POST /v1/chat/completions` at `https://api.meta.ai/v1`.
+- SAM 3.1 `sam-3.1`: streaming `POST /v1/responses`, official `@meta-sam/parser`.
+- SAM segments a prompted object; it does not classify defects. No automated performance claim.
 
-- **Impact (30%)**: practical preparedness prompts at room scale.
-- **Meta AI tooling (25%)**: an opt-in Meta Model API image-understanding path returns candidate objects, normalized boxes, conditional possibilities and suggested checks. Live output must only be claimed after an authorized live scan.
-- **Technical depth (20%)**: scripted what-if state, transparent rules, role-specific demo permissions, and generated action cards.
-- **Demo (25%)**: one visible loop from scenario to review to take-home checklist.
+## Submission deadline
 
-## Boundaries
+Official event page says Nov 4, 2026, 9:00 PM ET. For Istanbul (UTC+3), that's Nov 5, 2026, 5:00 AM. Recheck the participant portal and submit early.
 
-The shaking sequence is an authored animation, not physical simulation. It cannot estimate structural integrity, damage probability, safe shelter locations, or evacuation routes. The blocked-doorway scenario explicitly directs viewers to their real building guidance. Checklist counts only reflect local sample actions a resident marked; they are not a safety rating.
+## Must finish
 
-Room analysis and the earlier Forkcast adapter are disabled by default. Do not claim the sample scene, movements, checklist items, or action counts came from AI. Live room analysis requires `TREMOROOM_VISION_ENABLED=true`, a private `MODEL_API_KEY`, explicit user consent, and a click. It may consume credits. Never commit API keys. For a judging video, use the actual successful output from a consented scan, or clearly label the AI path as configured but not demonstrated.
+1. Replace the public repository's Tremoroom README/About and confirm root opens FactorySight.
+2. Capture one controlled, permission-approved bracket pair (normal and visibly altered) with consistent camera/lighting.
+3. Re-run Muse/SAM through the consented UI using those exact photos; record actual outputs and failures in the evaluation report.
+4. Prepare a 3-minute screen recording using only verified behavior.
+5. Submit project, video, and public repository via the Cerebral Valley portal; save confirmation.
 
-## Submission reminders
+## Demo boundaries
 
-The supplied event screenshot lists the required submission on the Cerebral Valley platform with every teammate, a three-minute demo video, a public GitHub repository and the Nov 4, 2026 deadline at 9:00 PM ET. Recheck the platform for changes and submit early.
-
-## API safety
-
-The app can call Meta Model API for room vision after the user chooses a photo, checks consent, and clicks Analyze. The app does not make background model requests. Never commit API keys or private photos.
+Never call a model candidate a confirmed defect. Never imply pixel-diff or SAM proves defect/compliance. If a live model call fails, show local comparison and say the AI path remains unverified on the part pair.

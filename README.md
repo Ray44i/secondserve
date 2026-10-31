@@ -1,39 +1,41 @@
-# Tremoroom
+# FactorySight
 
-**See what could move. Know what to check next.** Tremoroom helps renters and families in earthquake-prone homes turn room-level questions into clear, human-verified actions. It combines consent-based visual observations, illustrative what-if scenarios, and a take-home action card.
+**See the difference. Understand the defect. Verify the result.** FactorySight is a local-first visual inspection prototype for small manufacturers. It compares an approved reference photo with a part under inspection, combines human-visible image comparison with optional Meta model observations, and records the inspector's decision.
 
-## Run locally
+## Run
 
-Requires Node.js 20 or newer. Run npm start and open http://127.0.0.1:4173. The root page is Tremoroom; the earlier Forkcast prototype remains at /forkcast.html.
+Requires Node.js 20.17 or newer. Copy `.env.example` to `.env`, add a private Meta Model API key, and enable only the model features you intend to try. Then run:
 
-## Demo walkthrough
+```sh
+npm install
+npm start
+```
 
-1. Choose Resident or Specialist reviewer. This demo sign-in switches local views only; it is not authentication.
-2. Choose a room photo for a local preview. If room analysis has been deliberately enabled by the operator, read and check the consent box, then click Analyze; this sends a resized image to Meta Model API and may use credits. Otherwise, the photo remains local. Then select Light, Moderate, or Strong motion and a Main shaking, Aftershock, or Doorway blocked what-if.
-3. Run the 8-second, four-phase illustration. Watch the bookcase and mirror move according to the chosen scenario and sample confirmations.
-4. Review why each item was flagged. After checking the real room, residents can mark actions; the interface shows counts of marked and open items, never a safety score. The Specialist view is read-only for resident actions.
-5. Choose renter, owner, or unsure context, then build a room action card from open sample actions and, after a successful scan, model-suggested checks. Renter guidance avoids unapproved drilling and suggests asking the property manager. Print or save it as PDF; the card is generated locally.
-6. If no live scan is enabled, explain that the room, movement, observations and checklist weights are scripted sample data. If scanning is enabled, identify model findings as candidate visual observations, show uncertainty, then build the action card so viewers can see model suggestions become human-verified next steps.
+Open <http://127.0.0.1:4173>. Do not publish `.env` or part photos.
 
-## Product boundaries
+## Workflow
 
-The animated scenarios are scripted visual examples, not earthquake physics, damage forecasts, evacuation guidance, structural inspections, or validated safety ratings. Scenario profile names are illustrative controls, not measured ground motion. A photograph cannot establish a building's structural safety. Residents should verify their rooms and follow local emergency guidance and qualified professionals.
+1. Enter a product ID/type and inspection profile.
+2. Choose a reference photo and a photo of the part. Supported inputs: JPEG, PNG, WebP; 12 MB each.
+3. Compare locally side by side, with overlay, or a raw pixel-difference cue.
+4. If enabled, check consent and explicitly click Muse Spark analysis to send resized copies of both photos to Meta Model API. Findings are candidate observations with qualitative uncertainty and approximate boxes, not confirmed defects.
+5. Optionally ask SAM 3.1 to segment the named component. Segmentation localizes an object and does not detect defects.
+6. An inspector confirms, rejects, or marks each finding as uncertain. Save metadata/decisions locally and print/save the report as PDF.
 
-The role picker is not real login or secure RBAC. Scenario choices, checkboxes and the generated action card remain in the current browser page; no account, personal room photo, or review request is sent to a server.
+## Architecture
 
-Room photo analysis uses a separate disabled-by-default switch: `TREMOROOM_VISION_ENABLED=false`. Enabling it also requires `MODEL_API_KEY` in the private `.env`. A user must choose a photo, explicitly check consent, and click Analyze before an image is sent. Images are resized in-browser, not logged or stored by this server, and are forwarded to Meta Model API. A request may use credits. `/api/status` reports configuration only; it does not make a model request. The API response is constrained to visible-object observations, conditional possibilities, practical checks, confidence labels, and uncertainty. It is not a safety or structural assessment. The local sample must never be presented as AI output.
+Dependency-light Node server; plain HTML/CSS/browser JavaScript; Meta Model API via official OpenAI-compatible endpoints; official `@meta-sam/parser` for SAM streaming masks. Image files stay in memory and are not saved. Inspection metadata and decision history are stored in this browser's localStorage. There is no database, cloud storage, secure login, or production RBAC.
 
-## Hackathon fit
+## Configuration
 
-- **Impact (30%)**: focus on renters and families in earthquake-prone homes, turning visible room questions into human-verified next steps.
-- **Meta AI tooling (25%)**: an opt-in Meta Model API vision endpoint analyzes a resized room photo and returns candidate objects, normalized boxes, conditional possibilities, suggested checks, and uncertainties. Only claim live use after showing a successful scan in the recording.
-- **Technical depth (20%)**: scenario state, explainable checklist rules, role-specific demo access, resident correction, and a locally generated action card.
-- **Demo (25%)**: a clear room scene, selectable what-ifs, visible motion, mitigation, and a printable take-home outcome.
+`MODEL_API_KEY` stays in the ignored local `.env`. Optional `MODEL_API_MODEL` defaults to `muse-spark-1.3`. `FACTORYSIGHT_VISION_ENABLED` and `FACTORYSIGHT_SAM_ENABLED` gate separate features and default to `false` in `.env.example`. The server exposes only feature availability at `/api/factorysight/status`; neither model runs until the user consents and clicks its action.
 
-## Files
+## Tests
 
-- index.html, tremoroom.css, tremoroom.js: Tremoroom demo.
-- forkcast.html, styles.css, app.js: earlier Forkcast prototype.
-- server.mjs: local static server, optional Meta room-vision endpoint, and earlier Forkcast adapter (both model paths require explicit configuration).
-- .env.example: disabled-by-default API configuration.
-- DEMO_SCRIPT.md and SUBMISSION_CHECKLIST.md: recording and final hand-in guides.
+Run `npm test`. Current automated tests cover image data URL validation, inspection input constraints, and Muse result-schema validation. They do not measure model accuracy, SAM quality, or manufacturing defect performance.
+
+## Demo and limits
+
+See `docs/DEMO_SCRIPT.md`, `docs/SUBMISSION_DESCRIPTION.md`, and `docs/KNOWN_LIMITATIONS.md`. The local difference view is sensitive to image angle, scale and lighting. Model outputs are uncalibrated suggestions. This prototype does not issue compliance, safety, or product-release decisions. No sample component photos or 40-image evaluation set are bundled; provide an approved controlled pair before claiming a real part demonstration.
+
+The previous Tremoroom prototype remains accessible at `/index.html` as a fallback.
