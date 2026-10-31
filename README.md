@@ -1,34 +1,39 @@
-# Forkcast
+# Tremoroom
 
-**Rescue, recalculated.** Forkcast is a small interactive prototype for routing synthetic surplus food to a feasible recipient, then replanning when a pickup falls through.
+**See what could move. Know what to do next.** Tremoroom is a solo-built room-scale earthquake-preparedness prototype. It turns common household questions into an explainable checklist, lets residents rehearse illustrative what-if scenarios, and creates a take-home room action card.
 
-## Run the demo
+## Run locally
 
-Open `index.html` in a browser. No installation, API key, backend, or network request is required.
+Requires Node.js 20 or newer. Run npm start and open http://127.0.0.1:4173. The root page is Tremoroom; the earlier Forkcast prototype remains at /forkcast.html.
 
-1. Click **Extract & check** to parse the sample note and update the fictional batch.
-2. Remove the preparation or storage phrase and extract again to see routing pause for missing facts.
-3. Click **Simulate cancellation** to cancel the first recipient and recalculate the plan.
-4. See why the nearby fridge is rejected: it cannot take all 30 loaves.
-5. Click **Confirm simulated pickup** to record a handoff. The rescued count stays at zero until this confirmation.
-6. Click **Reset** to replay the scenario.
+## Demo walkthrough
 
-## Donor-note intake
+1. Choose Resident or Specialist reviewer. This demo sign-in switches local views only; it is not authentication.
+2. Choose a room photo for a local preview. If room analysis has been deliberately enabled by the operator, read and check the consent box, then click Analyze; this sends a resized image to Meta Model API and may use credits. Otherwise, the photo remains local. Then select Light, Moderate, or Strong motion and a Main shaking, Aftershock, or Doorway blocked what-if.
+3. Run the 8-second, four-phase illustration. Watch the bookcase and mirror move according to the chosen scenario and the sample mitigation checkboxes.
+4. Review why each item was flagged. Residents can mark sample actions; the Specialist view is read-only for resident actions.
+5. Build a personal room action card from the still-open flags. Print it or save it as PDF from the browser print dialog. The card is generated locally.
+6. If no live scan is enabled, explain that the room, movement, observations and checklist weights are scripted sample data. If scanning is enabled, identify model findings as candidate visual observations, show uncertainty, then build the action card so viewers can see model suggestions become human-verified next steps.
 
-Enter a fictional donor note such as `30 sourdough loaves, baked at 16:00, stored at 4°C, pickup by 20:30`, then click **Extract & check**. The local demo parser extracts a supported loaf quantity, item label, pickup time, and whether preparation and storage facts were stated. Forkcast applies the resulting batch to its deterministic capacity and time-window checks; missing preparation or storage facts pause routing.
+## Product boundaries
 
-This is a local pattern-matching demo, not a Meta model response. The note stays in the browser and no API call or network request is made. A future Meta Model API adapter must run behind a server endpoint with its key kept outside this public repository. Model output must not decide food safety or override the deterministic route checks.
+The animated scenarios are scripted visual examples, not earthquake physics, damage forecasts, evacuation guidance, structural inspections, or validated safety ratings. Scenario profile names are illustrative controls, not measured ground motion. A photograph cannot establish a building's structural safety. Residents should verify their rooms and follow local emergency guidance and qualified professionals.
 
-## What the prototype demonstrates
+The role picker is not real login or secure RBAC. Scenario choices, checkboxes and the generated action card remain in the current browser page; no account, personal room photo, or review request is sent to a server.
 
-- Synthetic batch intake with a pickup deadline and recorded preparation facts.
-- Hard checks for safety facts, availability, recipient capacity, and pickup windows.
-- A deterministic ETA ranking across feasible recipients.
-- Cancellation handling, replanning, and an auditable decision trail.
-- An outcome ledger that separates a proposed plan from a confirmed (simulated) handoff.
+Room photo analysis uses a separate disabled-by-default switch: `TREMOROOM_VISION_ENABLED=false`. Enabling it also requires `MODEL_API_KEY` in the private `.env`. A user must choose a photo, explicitly check consent, and click Analyze before an image is sent. Images are resized in-browser, not logged or stored by this server, and are forwarded to Meta Model API. A request may use credits. `/api/status` reports configuration only; it does not make a model request. The API response is constrained to visible-object observations, conditional possibilities, practical checks, confidence labels, and uncertainty. It is not a safety or structural assessment. The local sample must never be presented as AI output.
 
-The demo uses fictional data and does not make real pickup commitments. Its safety gate only demonstrates configured rules; it is not food-safety or legal advice. No Meta Model API calls are made. The decision logic is isolated in `app.js` so a model adapter can be added later without letting a model override the hard constraints.
+## Hackathon fit
 
-## Project direction
+- **Impact (30%)**: turn earthquake preparedness into understandable, room-level next steps.
+- **Meta AI tooling (25%)**: an opt-in Meta Model API vision endpoint analyzes a resized room photo and returns candidate objects, normalized boxes, conditional possibilities, suggested checks, and uncertainties. Only claim live use after showing a successful scan in the recording.
+- **Technical depth (20%)**: scenario state, explainable checklist rules, role-specific demo access, resident correction, and a locally generated action card.
+- **Demo (25%)**: a clear room scene, selectable what-ifs, visible motion, mitigation, and a printable take-home outcome.
 
-The hackathon MVP should stay focused on the cancellation-and-recovery loop. The local donor-note parser previews the intake flow; it is not a Meta model response. The next step is a server-side Meta Model API adapter after credits are confirmed, while keeping the API key out of this public repository and keeping hard constraints deterministic.
+## Files
+
+- index.html, tremoroom.css, tremoroom.js: Tremoroom demo.
+- forkcast.html, styles.css, app.js: earlier Forkcast prototype.
+- server.mjs: local static server, optional Meta room-vision endpoint, and earlier Forkcast adapter (both model paths require explicit configuration).
+- .env.example: disabled-by-default API configuration.
+- DEMO_SCRIPT.md and SUBMISSION_CHECKLIST.md: recording and final hand-in guides.

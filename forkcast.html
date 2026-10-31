@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#102e25" />
+    <meta name="description" content="Forkcast routes safe surplus food to its best feasible next stop." />
+    <title>Forkcast — Rescue, recalculated.</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  </head>
+  <body>
+    <section class="login-screen" id="loginScreen" aria-labelledby="loginTitle">
+      <div class="login-brand"><span class="brand-mark" aria-hidden="true">↗</span><span>forkcast<span>.</span></span><small>RESCUE NETWORK · DEMO</small></div>
+      <div class="login-layout">
+        <div class="login-story">
+          <div class="eyebrow"><span class="eyebrow-line"></span> ONE DONATION. THREE PEOPLE.</div>
+          <h1 id="loginTitle">Make the handoff<br /><em>survive the surprise.</em></h1>
+          <p>Follow one surplus-food rescue from donor note to recipient pickup. Each role gets its own tools and view.</p>
+          <div class="login-proof"><span>30</span><div><strong>fictional loaves in motion</strong><small>One cancellation. One backup route. One confirmed outcome.</small></div></div>
+        </div>
+        <div class="login-card">
+          <div class="section-kicker">CHOOSE A DEMO ROLE</div>
+          <h2>Enter the rescue network</h2>
+          <p class="login-disclaimer">Demo sign-in only · no password or account is created</p>
+          <button class="role-choice" id="loginDonor" data-login-role="donor" type="button"><span class="role-icon">01</span><span><strong>Donor partner</strong><small>Create a donation and track its status</small></span><span class="role-arrow">→</span></button>
+          <button class="role-choice" id="loginCoordinator" data-login-role="coordinator" type="button"><span class="role-icon">02</span><span><strong>Rescue coordinator</strong><small>Review constraints, dispatch, and reroute</small></span><span class="role-arrow">→</span></button>
+          <button class="role-choice" id="loginRecipient" data-login-role="recipient" type="button"><span class="role-icon">03</span><span><strong>Recipient kitchen</strong><small>Review an offer and confirm pickup</small></span><span class="role-arrow">→</span></button>
+          <div class="demo-security"><span>◈</span> Role access is simulated in this prototype; this is not production authentication.</div>
+        </div>
+      </div>
+      <div class="rubric-strip" aria-label="Hackathon criteria addressed">
+        <div><span>30%</span><strong>Real-world impact</strong><small>Food rescued only after handoff</small></div>
+        <div><span>25%</span><strong>Meta AI tooling</strong><small>Adapter built · currently disabled</small></div>
+        <div><span>20%</span><strong>Technical depth</strong><small>Hard checks · clear permissions · audit trail</small></div>
+        <div><span>25%</span><strong>Demo quality</strong><small>Donor → coordinator → recipient</small></div>
+      </div>
+    </section>
+
+    <div class="app-shell" id="appShell" hidden>
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="Forkcast home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 44 44" fill="none">
+              <path d="M9 8v9.5a5 5 0 0 0 10 0V8M14 8v10M9 13h10M14 22v14M30 8c-4 4-5 8-5 13v2h9v-2c0-5-1-9-4-13ZM29.5 23v13" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <span class="brand-name">forkcast<span class="brand-period">.</span></span>
+        </a>
+        <div class="topbar-right">
+          <span class="demo-label"><span class="pulse-dot"></span> INTERACTIVE DEMO</span>
+          <div class="role-session" id="roleSession"><span class="role-session-label" id="roleSessionLabel"></span><button class="switch-role-button" id="switchRoleButton" type="button">Switch role</button></div>
+          <button class="reset-button" id="resetButton" type="button" title="Reset the demo scenario" hidden>
+            <span aria-hidden="true">↺</span> Reset
+          </button>
+        </div>
+      </header>
+
+      <main id="top">
+        <section class="hero" aria-labelledby="heroTitle">
+          <div class="hero-copy">
+            <div class="eyebrow"><span class="eyebrow-line"></span> WHEN A PICKUP FALLS THROUGH</div>
+            <h1 id="heroTitle">The donation can still make it.<br /><em>Even when the plan doesn’t.</em></h1>
+            <p>Forkcast turns a donor message into an explainable pickup plan, then finds the next feasible recipient when the first one cancels.</p>
+          </div>
+          <div class="hero-note">
+            <span class="note-icon" aria-hidden="true">↗</span>
+            <div><strong>Our promise</strong><span>Rules first. Reroute fast. Count only confirmed handoffs.</span></div>
+          </div>
+        </section>
+
+        <div class="demo-ribbon">
+          <span><strong>SIMULATION</strong> · Fictional donation, recipients, locations, and events.</span>
+          <span class="model-status" id="modelStatus"><span class="model-dot"></span> Local mode · Meta requests disabled</span>
+        </div>
+
+        <nav class="journey-rail" aria-label="Rescue workflow">
+          <div class="journey-step done" id="journey-intake"><span>01</span><strong>Read the note</strong><small>Donor intake</small></div>
+          <span class="journey-connector" aria-hidden="true"></span>
+          <div class="journey-step done" id="journey-check"><span>02</span><strong>Check the fit</strong><small>Hard constraints</small></div>
+          <span class="journey-connector" aria-hidden="true"></span>
+          <div class="journey-step active" id="journey-reroute"><span>03</span><strong>Recover the plan</strong><small>Cancellation response</small></div>
+          <span class="journey-connector" aria-hidden="true"></span>
+          <div class="journey-step" id="journey-confirm"><span>04</span><strong>Confirm impact</strong><small>Outcome ledger</small></div>
+        </nav>
+
+        <section class="role-banner" aria-live="polite"><span class="role-banner-icon">⌁</span><div><div class="section-kicker">ROLE WORKSPACE · DEMO ACCESS</div><h2 id="roleViewHeading">Create a donation</h2><p id="roleViewDescription">Submit an item and track its progress.</p></div><span class="role-banner-note" id="roleProgressLabel">ROLE RULES ACTIVE IN THIS DEMO</span></section>
+
+        <section class="workspace" aria-label="Forkcast surplus recovery demo">
+          <div class="main-column">
+            <article class="panel intake-panel" id="intakePanel" aria-labelledby="intakeTitle">
+              <div class="panel-heading intake-heading">
+                <div>
+                  <div class="section-kicker">DONOR NOTE → STRUCTURED BATCH</div>
+                  <h2 id="intakeTitle">Turn a message into a pickup plan</h2>
+                </div>
+                <span class="intake-mode" id="intakeMode">LOCAL DEMO · NO API CALLS</span>
+              </div>
+              <label class="intake-label" for="donorNote">SAMPLE DONOR NOTE</label>
+              <textarea id="donorNote" rows="2" spellcheck="false">30 sourdough loaves, baked at 16:00, stored at 4°C, pickup by 20:30</textarea>
+              <div class="offer-category-label">WHAT ARE YOU OFFERING?</div>
+              <div class="offer-category-grid" role="group" aria-label="Offer category">
+                <button class="offer-category selected" data-service="free-donation" type="button"><span>↗</span><strong>Free donation</strong><small>Surplus shared at no cost</small></button>
+                <button class="offer-category" data-service="discounted-surplus" type="button"><span>%</span><strong>Discounted surplus</strong><small>Reduced price for this batch</small></button>
+                <button class="offer-category" data-service="prepared-meals" type="button"><span>◒</span><strong>Prepared meals</strong><small>Ready-to-eat meal rescue</small></button>
+                <button class="offer-category" data-service="pantry-restock" type="button"><span>▦</span><strong>Pantry restock</strong><small>Packaged grocery boxes</small></button>
+              </div>
+              <div class="discount-fields" id="discountFields" hidden>
+                <label for="offerPrice">Discounted total for this batch</label>
+                <span class="price-entry"><select id="offerCurrency" aria-label="Currency"><option>USD</option><option>EUR</option><option>TRY</option></select><input id="offerPrice" type="number" min="0.01" step="0.01" placeholder="e.g. 8.00" /></span>
+              </div>
+              <div class="intake-controls">
+                <span id="intakeHelp">Local extraction only. Meta extraction sends this note to Meta when you click its button.</span>
+                <button class="primary-button intake-button" id="parseIntakeButton" type="button">Submit offer <span aria-hidden="true">→</span></button>
+                <button class="reset-button intake-button" id="metaExtractButton" type="button" hidden>Extract with Meta AI</button>
+              </div>
+              <div class="intake-result" id="intakeResult" role="status" aria-live="polite">This local demo parser never sends your note anywhere. Extracted values update the fictional batch below.</div>
+            </article>
+
+            <article class="panel batch-panel" id="batchPanel">
+              <div class="panel-heading">
+                <div>
+                  <div class="section-kicker">BATCH FC-024 <span class="live-dot"></span></div>
+                  <h2>Tonight’s surplus</h2>
+                </div>
+                <span class="status-pill" id="batchStatus">ROUTE PROPOSED</span>
+              </div>
+
+              <div class="batch-summary">
+                <div class="loaf-art" aria-hidden="true">
+                  <svg viewBox="0 0 120 100" fill="none">
+                    <path d="M17 59c0-18 19-33 43-33s43 15 43 33v16c0 7-6 12-13 12H30c-7 0-13-5-13-12V59Z" fill="#D99B58" />
+                    <path d="M29 56c3-9 9-15 17-19M51 52c3-9 9-15 17-18M73 52c3-8 8-13 14-16" stroke="#F4D4A7" stroke-width="5" stroke-linecap="round" />
+                    <path d="M13 87h96" stroke="#B7C1AE" stroke-width="3" stroke-linecap="round" />
+                    <circle cx="99" cy="23" r="13" fill="#B9D69B" />
+                    <path d="M95 23h8M99 19v8" stroke="#234638" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <div class="batch-details">
+                  <div class="quantity"><span id="quantityDisplay">30</span> <small id="quantityUnit">loaves</small></div>
+                  <div class="item-name" id="itemNameDisplay">Fresh sourdough</div>
+                  <div class="service-badge" id="serviceBadge">FREE DONATION · $0</div>
+                  <div class="business-line"><span class="business-icon">⌂</span> Apricot Bakehouse <span class="location-sep">·</span> Kadıköy, Istanbul</div>
+                </div>
+                <div class="deadline-card">
+                  <span class="deadline-label">PICKUP BY</span>
+                  <strong id="deadlineDisplay">20:30</strong>
+                  <span class="deadline-date">SIMULATION · 19:10 START</span>
+                  <div class="deadline-progress"><span></span></div>
+                  <span class="time-left" id="timeRemaining">80 min remaining</span>
+                </div>
+              </div>
+
+              <div class="safety-strip">
+                <span class="checkmark" id="safetyIcon" aria-hidden="true">✓</span>
+                <div><strong id="safetyTitle">Required demo facts present</strong><span id="safetyDescription">A preparation time and storage temperature were found. This is not a food-safety determination.</span></div>
+                <span class="gate-tag">RULE CHECK</span>
+              </div>
+            </article>
+
+            <article class="panel routes-panel" id="routesPanel">
+              <div class="panel-heading routes-heading">
+                <div>
+                  <div class="section-kicker">FEASIBLE OPTIONS</div>
+                  <h2 id="routesTitle">Best available route</h2>
+                </div>
+                <span class="route-count" id="routeCount">3 checked · 2 feasible</span>
+              </div>
+
+              <div class="selected-route" id="selectedRoute">
+                <div class="route-rank">TOP<br />MATCH</div>
+                <div class="route-destination">
+                  <div class="destination-title"><strong id="selectedName">Sahil Community Kitchen</strong><span class="selected-tag" id="selectedTag">PROPOSED</span></div>
+                  <span id="selectedReason">Fastest feasible pickup · full batch capacity</span>
+                </div>
+                <div class="route-eta"><strong id="selectedEta">8</strong><span>min ETA</span></div>
+                <div class="route-arrow" aria-hidden="true">↗</div>
+              </div>
+
+              <div class="route-map" id="routeMap" data-destination="none" data-phase="draft">
+                <div class="map-heading"><span>NEARBY PLACE DISCOVERY</span><span class="map-sim-tag"><i></i> OPENSTREETMAP</span></div>
+                <div class="map-actions"><button class="map-action" id="locateMeButton" type="button">◎ Use my location</button><button class="map-action map-action-primary" id="searchNearbyButton" type="button">Find places near map center</button><label class="radius-control">Radius <select id="searchRadius"><option value="3000">3 km</option><option value="5000" selected>5 km</option><option value="10000">10 km</option></select></label></div>
+                <div class="map-privacy-note">Location is only requested when you tap the button. A search sends the chosen map center to OpenStreetMap’s public nearby-data service; Forkcast does not save it.</div>
+                <div id="realMap" class="real-map" role="application" aria-label="Interactive map. Click to choose a nearby search center."></div>
+                <div class="map-attribution-note">© OpenStreetMap contributors · map data is not a verification of services, capacity, hours, or availability.</div>
+                <div class="map-results-heading"><strong id="mapStatus">Map ready · click a place on the map to set a search center</strong><span id="mapResultCount"></span></div>
+                <div class="nearby-place-list" id="nearbyPlaceList" aria-live="polite"><div class="nearby-empty">Nearby food banks and community kitchens will appear here after a search.</div></div>
+                <div class="place-verification" id="placeVerification" hidden>
+                  <div class="place-selected"><span>SELECTED MAP PLACE</span><strong id="selectedPlaceName"></strong><a id="selectedPlaceLink" href="#" target="_blank" rel="noreferrer">Open OSM listing ↗</a></div>
+                  <div class="place-facts-grid"><label>Confirmed capacity (items)<input id="placeCapacity" type="number" min="1" max="999" placeholder="Ask the recipient" /></label><label>Coordinator ETA (min)<input id="placeEta" type="number" min="1" max="240" placeholder="Confirm route time" /></label><label>Pickup cutoff<input id="placeClosing" type="time" /></label></div>
+                  <label class="availability-check"><input id="placeVerified" type="checkbox" /> I confirmed capacity, pickup time, and availability with this recipient.</label>
+                  <button class="primary-button" id="addPlaceButton" type="button" disabled>Add verified place to route check <span aria-hidden="true">→</span></button>
+                </div>
+              </div>
+
+              <div class="candidate-list" id="candidateList" aria-live="polite"></div>
+              <div class="constraint-note"><span aria-hidden="true">↳</span> Hard constraints filter first. Travel time ranks only the feasible options.</div>
+            </article>
+
+            <div class="action-row" id="actionRow">
+              <div class="action-copy" id="actionCopy"><span class="action-step">NEXT EVENT</span><strong>A recipient cancels shortly before pickup.</strong></div>
+              <button class="primary-button" id="dispatchButton" type="button" hidden>Approve &amp; send offer <span aria-hidden="true">→</span></button>
+              <button class="primary-button" id="cancelButton" type="button">Simulate cancellation <span aria-hidden="true">→</span></button>
+            </div>
+          </div>
+
+          <aside class="side-column">
+            <article class="panel decision-panel" id="decisionPanel">
+              <div class="panel-heading">
+                <div>
+                  <div class="section-kicker">ROUTING ACTIVITY</div>
+                  <h2>Decision trail</h2>
+                </div>
+                <span class="trail-indicator"><span></span> DEMO</span>
+              </div>
+              <div class="timeline" id="timeline" aria-live="polite">
+                <div class="timeline-item completed">
+                  <span class="timeline-marker">✓</span>
+                  <div><strong>Batch received</strong><span>30 loaves · Apricot Bakehouse</span><time>19:10</time></div>
+                </div>
+                <div class="timeline-item completed">
+                  <span class="timeline-marker">✓</span>
+                  <div><strong>Safety facts checked</strong><span>All configured demo rules passed</span><time>19:10</time></div>
+                </div>
+                <div class="timeline-item current" id="proposalEvent">
+                  <span class="timeline-marker">3</span>
+                  <div><strong>Route proposed</strong><span>Sahil Community Kitchen · 8 min ETA</span><time>19:10</time></div>
+                </div>
+              </div>
+              <div class="trail-footer"><span class="trail-lock" aria-hidden="true">⌑</span> Every decision has a reason. Every outcome is recorded.</div>
+            </article>
+
+            <article class="panel impact-panel" id="impactPanel">
+              <div class="impact-top"><span class="section-kicker">SIMULATED IMPACT</span><span class="impact-icon" aria-hidden="true">✳</span></div>
+              <div class="impact-number"><span id="rescuedDisplay">0</span><small> loaves</small></div>
+              <p id="impactMessage">Nothing counted as rescued until pickup is confirmed.</p>
+              <div class="impact-rule"><span></span><span></span><span></span><span></span><span></span></div>
+              <div class="impact-foot"><span id="impactStatus">AWAITING CONFIRMATION</span><span>OUTCOME LEDGER</span></div>
+            </article>
+
+            <div class="logic-card" id="logicCard">
+              <span class="logic-icon" aria-hidden="true">◈</span>
+              <div><strong>Rules before recommendations</strong><p>The demo uses deterministic safety and capacity checks. No model decides whether food is safe.</p></div>
+            </div>
+            <article class="panel recipient-offer-panel" id="recipientOfferPanel" hidden>
+              <div class="panel-heading"><div><div class="section-kicker">RECIPIENT INBOX</div><h2 id="offerHeading">A pickup offer is on its way</h2></div><span class="offer-status" id="offerStatus">WAITING</span></div>
+              <div class="offer-details"><span class="offer-icon">↗</span><div><strong id="offerRecipient">Sahil Community Kitchen</strong><span id="offerDetails">30 sourdough loaves · pickup by 20:30</span></div></div>
+              <p class="offer-message" id="offerMessage">A coordinator will send a proposed pickup. Review the details, then accept or decline.</p>
+              <div class="offer-actions"><button class="primary-button" id="acceptOfferButton" type="button" hidden>Accept offer <span aria-hidden="true">✓</span></button><button class="reset-button" id="declineOfferButton" type="button" hidden>Decline offer</button><button class="primary-button confirm-button" id="confirmButton" type="button" hidden>Confirm simulated pickup <span aria-hidden="true">✓</span></button></div>
+            </article>
+          </aside>
+        </section>
+
+        <footer class="footer">
+          <span class="footer-brand">forkcast<span>.</span></span>
+          <span>Rescue, recalculated.</span>
+          <span class="footer-right">A small demo for a big daily problem <span aria-hidden="true">↗</span></span>
+        </footer>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="app.js"></script>
+  </body>
+</html>
