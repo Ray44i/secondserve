@@ -3,7 +3,7 @@ const $ = (id) => document.getElementById(id);
 const savedSession = (() => { try { return JSON.parse(sessionStorage.getItem('secondserve.demo.session') || '{}'); } catch { return {}; } })();
 const savedProfile = (() => { try { return JSON.parse(localStorage.getItem('secondserve.food.profile') || 'null'); } catch { return null; } })();
 const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null, foodPhotoDataUrl:'',batchPhotoDataUrl:'',providerBatches:[],activeProviderBatch:null };
-const roleNames = { neighbor:'Food seeker', donor: 'Food business', coordinator: 'Rescue coordinator', recipient: 'Recipient partner' };
+const roleNames = { neighbor:'Food seeker', household:'Community donor', donor: 'Food business', coordinator: 'Rescue coordinator', recipient: 'Recipient partner' };
 const marketCategories = [
   { value:'Bakery',label:'Bakery & bread',icon:'♨' },{ value:'Produce',label:'Fruit & veg',icon:'✿' },
   { value:'Prepared meals',label:'Ready meals',icon:'▤' },{ value:'Dairy',label:'Dairy & chilled',icon:'◉' },
@@ -32,6 +32,7 @@ async function login(role) {
     state.token=result.token; state.role=result.role; state.organizationId=result.organizationId||''; sessionStorage.setItem('secondserve.demo.session',JSON.stringify({token:state.token,role:state.role,organizationId:state.organizationId}));
     $('loginScreen').hidden=true; $('appShell').hidden=false; $('roleLabel').textContent=roleNames[state.role]+(state.organizationId?` · ${orgName(state.organizationId)}`:'');
     setView(role==='neighbor'?'nearby':'operations');
+    configureHouseholdIntake();
     await refresh();
     if(role==='neighbor') await loadMarketplace();
     if(role==='donor') await loadProviderBatches();
@@ -41,8 +42,24 @@ async function login(role) {
 function orgName(id) { return state.data?.recipients?.find(x=>x.id===id)?.name || ({'charity-a':'Charity A','kitchen-b':'Community Kitchen B','charity-c':'Charity C'}[id]||'Recipient'); }
 function activeOffer(d) { return d?.offers?.[0] || null; }
 function statusPill(el, value) { el.textContent=value||'WAITING'; el.dataset.status=value||'WAITING'; }
+function configureHouseholdIntake(){
+  const household=state.role==='household';
+  const changeLabel=(id,value)=>{const label=$(id)?.closest('label');if(label?.firstChild?.nodeType===Node.TEXT_NODE)label.firstChild.textContent=value;};
+  changeLabel('foodName',household?'FOOD YOU’RE SHARING':'FOOD NAME');
+  changeLabel('quantity',household?'AMOUNT AVAILABLE':'QUANTITY');
+  changeLabel('pickupLocation',household?'PICKUP NEIGHBORHOOD':'PICKUP LOCATION');
+  changeLabel('businessNote',household?'NOTES FOR THE RECIPIENT':'DONOR NOTE');
+  $('preferenceField').hidden=household;
+  $('businessVisionIntake').hidden=household;
+  $('parseNote').hidden=household;
+  $('foodName').placeholder=household?'e.g. sealed pantry items':'e.g. spinach pies';
+  $('pickupLocationNote').textContent=household?'Enter a neighborhood or public pickup point only; never add your home address.':'Use a neighborhood or public pickup point; don’t enter a home address.';
+  $('businessNote').placeholder=household?'Add useful handoff details. Do not include private contact or home-address information.':'Describe what is available, pickup constraints, storage, dates, and allergens. The AI draft will need your review.';
+  $('attestationText').textContent=household?'I confirm this is a free donation and the listed ingredient, date, storage, and condition details are accurate to my knowledge. This is not a food-safety certification.':'I confirm the listing details reflect the donor’s records and handling information. This is not a food-safety certification.';
+  if(household&&state.profile)$('pickupLocation').value=NEIGHBORHOODS[state.profile.neighborhood]?.label||'Kadıköy, Istanbul';
+}
 function render(d) {
-  state.data=d; const item=d.activeListing, offer=activeOffer(d);
+  state.data=d; const item=d.activeListing, offer=activeOffer(d), household=state.role==='household', householdItem=item?.business?.id==='household-community';
   $('workflow').hidden=state.role!=='coordinator';
   $('providerPanel').hidden=state.role!=='donor';
   $('reportedMetric').textContent=fmtUnits(d.impactSummary.reportedByUnit);
@@ -52,18 +69,19 @@ function render(d) {
   $('impactVerified').textContent=fmtUnits(d.impactSummary.verifiedByUnit); $('impactPickups').textContent=fmtNum(d.impactSummary.verifiedPickups);
   $('deadlineChip').textContent=item?`PICKUP BY ${when(item.pickupDeadline)}`:'No active listing';
   $('heroScenario').textContent=item?`${item.quantity} ${item.unit} ${item.foodName.toLowerCase()} · ${item.status.replaceAll('_',' ')}`:'Load a scenario to begin.';
-  $('listingForm').hidden=!(state.role==='donor'&&!item);
-  $('listingSummary').hidden=!item;
-  if(item) {
+  $('listingForm').hidden=household?householdItem:!(state.role==='donor'&&!item);
+  $('listingSummary').hidden=household?!householdItem:!item;
+  configureHouseholdIntake();
+  if(item&&(!household||householdItem)) {
     $('listingTitle').textContent=`${fmtNum(item.quantity)} ${item.unit} · ${item.foodName}`;
     $('listingSubtitle').textContent=`${item.business.name} · ${item.pickupLocation||'Kadıköy, Istanbul'} · ${item.preference.replaceAll('_',' ')}`;
     statusPill($('listingStatus'),item.status);
     $('listingSummary').innerHTML=[
-      ['CATEGORY',item.category.replaceAll('_',' ')],['PICKUP DEADLINE',when(item.pickupDeadline)],['STORAGE',item.storage],['DATE TYPE',item.expiryType.replaceAll('_',' ')],['DATE VALUE',item.expiryAt?when(item.expiryAt):item.bestBeforeAt?when(item.bestBeforeAt):'Not stated'],['ALLERGENS',item.allergens],['CONDITION',item.condition.replaceAll('_',' ')],['PREFERENCE',item.preference.replaceAll('_',' ')],['BUSINESS ATTESTATION',item.attested?'Recorded':'Missing']
+      ['CATEGORY',item.category.replaceAll('_',' ')],['PICKUP DEADLINE',when(item.pickupDeadline)],['STORAGE',item.storage],['DATE TYPE',item.expiryType.replaceAll('_',' ')],['DATE VALUE',item.expiryAt?when(item.expiryAt):item.bestBeforeAt?when(item.bestBeforeAt):'Not stated'],['ALLERGENS',item.allergens],['CONDITION',item.condition.replaceAll('_',' ')],['PREFERENCE',item.preference.replaceAll('_',' ')],[household?'DONOR ATTESTATION':'BUSINESS ATTESTATION',item.attested?'Recorded':'Missing']
     ].map(([label,value])=>`<div class="summary-cell"><small>${safe(label)}</small><b>${safe(value)}</b></div>`).join('');
     renderGates(item,d,offer);
   } else {
-    $('listingTitle').textContent='No active surplus'; $('listingSubtitle').textContent=state.role==='donor'?'Enter the batch facts below; the business must confirm the listing before it becomes active.':'Load a demo scenario or ask a food business to report a batch.';
+    $('listingTitle').textContent=household?'Share leftover food for free':'No active surplus'; $('listingSubtitle').textContent=household?'Offer surplus from home to nearby community partners. Household donations are always free.':state.role==='donor'?'Enter the batch facts below; the business must confirm the listing before it becomes active.':'Load a demo scenario or ask a food business to report a batch.';
     statusPill($('listingStatus'),'WAITING'); $('listingSummary').replaceChildren();
     $('decisionStatus').textContent='Waiting for a listing'; $('decisionExplanation').textContent='The agent will explain constraints, candidates, exclusions, and its next action.';
     $('gateList').querySelectorAll('b').forEach(b=>b.textContent='WAITING');
@@ -158,7 +176,7 @@ function renderMarketplace(){
   const list=$('marketList'); if(!list)return;
   initMarketMap(); const items=visibleMarketListings(); list.replaceChildren(); state.marketMarkers.forEach(m=>m.remove());state.marketMarkers=[];
   renderCategoryFilters();
-  $('marketCount').textContent=`${items.length} demo ${items.length===1?'listing':'listings'}`;
+  $('marketCount').textContent=`${items.length} nearby ${items.length===1?'offer':'offers'}`;
   $('mapLiveCount').innerHTML=`<i></i> ${items.length} ${items.length===1?'SPOT':'SPOTS'}`;
   $('mapCaption').textContent=state.locationSource==='device'?'Approximate distance from your location · demo listings':state.profile?`Approximate distance from ${NEIGHBORHOODS[state.profile.neighborhood]?.label||'your area'} · demo listings`:'Illustrative demo locations · Kadıköy';
   $('mapAreaLabel').textContent=state.locationSource==='device'?'YOUR AREA · APPROXIMATE':state.profile?`${NEIGHBORHOODS[state.profile.neighborhood]?.label||'YOUR AREA'} · DEMO`:'KADIKÖY · DEMO AREA';
@@ -244,6 +262,7 @@ document.querySelectorAll('[data-role]').forEach(button=>button.addEventListener
 $('loginOrg').onchange=()=>{};
 document.querySelectorAll('[data-role]').forEach(button=>button.addEventListener('pointerenter',()=>{if(button.dataset.role==='recipient')$('loginOrgWrap').hidden=false;}));
 $('switchRole').onclick=()=>{state.token='';state.role='';state.organizationId='';sessionStorage.removeItem('secondserve.demo.session');showLogin();};
+$('shareFood').onclick=()=>login('household');
 $('loadScenario').onclick=()=>doAction('/api/secondserve/demo/load',{scenario:$('scenario').value});
 $('runAgent').onclick=()=>doAction('/api/secondserve/agent/run');
 $('dispatchOffer').onclick=()=>doAction('/api/secondserve/offers/dispatch');
@@ -300,7 +319,7 @@ $('askMuseBrief').onclick=async()=>{
   finally{button.disabled=false;button.textContent='Ask Muse Spark for a coordinator brief';}
 };
 $('listingForm').addEventListener('submit',async(event)=>{
-  event.preventDefault(); if(state.role!=='donor')return;
+  event.preventDefault(); if(!['donor','household'].includes(state.role))return;
   const dateType=$('expiryType').value, date=$('expiryDate').value;
   const pickupValue=$('pickupDeadline').value;
   const prepValue=$('preparedAt').value;
@@ -308,7 +327,8 @@ $('listingForm').addEventListener('submit',async(event)=>{
     preparedAt:prepValue?new Date(prepValue).toISOString():null,expiryType:dateType,expiryAt:dateType==='use_by'&&date?new Date(`${date}T23:59:00`).toISOString():null,
     bestBeforeAt:dateType==='best_before'&&date?new Date(`${date}T23:59:00`).toISOString():null,storage:$('storage').value,
     allergens:$('allergens').value.trim()||'Unknown',condition:$('condition').value,pickupDeadline:pickupValue?new Date(pickupValue).toISOString():'',
-    pickupLocation:$('pickupLocation').value.trim(),preference:$('preference').value,attested:$('attested').checked};
+    pickupLocation:$('pickupLocation').value.trim(),preference:state.role==='household'?'donation':$('preference').value,attested:$('attested').checked,
+    pickupLat:state.role==='household'&&state.locationSource==='profile'?state.userLocation?.lat:null,pickupLon:state.role==='household'&&state.locationSource==='profile'?state.userLocation?.lon:null};
   await doAction('/api/secondserve/listings',body);
 });
 $('parseNote').onclick=async()=>{

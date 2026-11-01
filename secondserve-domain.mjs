@@ -105,11 +105,14 @@ export function getProviderBatches(db) {
 
 export function getNearbyListings(db) {
   const title=category=>({bakery:'Bakery',produce:'Produce',dairy:'Dairy',prepared_meals:'Prepared meals',pantry:'Pantry',other:'Other'}[category]||category);
+  const household=db.prepare(`SELECT * FROM surplus_listings WHERE business_id='household-community' AND strategy_preference='donation' AND status='AVAILABLE' AND pickup_deadline>? ORDER BY created_at DESC`).all(nowIso())
+    .map(row=>({id:`household-${row.id}`,name:row.food_name,business:'Community donor',category:title(row.category),quantity:row.quantity,unit:row.unit,offerType:'donation',priceTry:null,
+      location:row.pickup_location,lat:row.pickup_lat,lon:row.pickup_lon,pickupUntil:row.pickup_deadline,note:'Free household donation · donor-declared details · partner handoff is simulated in this local demo.',householdDonation:true}));
   const dynamic=db.prepare("SELECT b.*,o.id AS offer_id FROM provider_batches b JOIN provider_market_offers o ON o.id=b.market_offer_id WHERE o.status='OPEN' AND b.status='LISTED' ORDER BY o.opened_at DESC").all()
     .map(row=>{const b=providerInventory(db,row.id);return {id:`provider-${row.id}`,batchId:row.id,name:b.food_name,business:'Golden Crust Bakery',category:title(b.category),quantity:b.remainingQuantity,unit:b.unit,
       offerType:'discounted_sale',priceTry:Math.round(b.retail_price_try*(1-b.discount_percent/100)*100)/100,regularPriceTry:b.retail_price_try,discountPercent:b.discount_percent,location:b.pickup_location,lat:b.pickup_lat,lon:b.pickup_lon,
       pickupUntil:b.pickup_deadline,note:`Automatically discounted ${b.discount_percent}% at 9 PM · demo POS inventory · ask the business to confirm product details.`,purchaseable:true};});
-  return [...getNearbyDemoListings(),...dynamic];
+  return [...household,...getNearbyDemoListings(),...dynamic];
 }
 
 export function purchaseProviderOffer(db, batchId, quantity, now = new Date()) {
@@ -130,10 +133,11 @@ export function initializeSecondServe(db, schemaSql) {
   db.exec(schemaSql);
   db.exec('PRAGMA foreign_keys = ON;');
   const count = db.prepare('SELECT COUNT(*) AS n FROM organizations').get().n;
-  if (count) return;
-  const insertOrg = db.prepare('INSERT INTO organizations(id,name,type,lat,lon,service_radius_km,verified_status,created_at) VALUES(?,?,?,?,?,?,?,?)');
-  const insertRecipient = db.prepare('INSERT INTO recipient_profiles(organization_id,accepted_categories,maximum_capacity,storage_capabilities,close_minute,transportation_available,preference,reliability) VALUES(?,?,?,?,?,?,?,?)');
+  const insertOrg = db.prepare('INSERT OR IGNORE INTO organizations(id,name,type,lat,lon,service_radius_km,verified_status,created_at) VALUES(?,?,?,?,?,?,?,?)');
   const created = nowIso();
+  insertOrg.run('household-community','Community donor','household',40.9892,29.0301,0,'simulated',created);
+  if (count) return;
+  const insertRecipient = db.prepare('INSERT INTO recipient_profiles(organization_id,accepted_categories,maximum_capacity,storage_capabilities,close_minute,transportation_available,preference,reliability) VALUES(?,?,?,?,?,?,?,?)');
   insertOrg.run('golden-crust', 'Golden Crust Bakery', 'business', 40.9824, 29.0608, 0, 'simulated', created);
   const orgs = [
     ['charity-a', 'Charity A', 'charity', 40.9914, 29.0472, 15, 'verified-demo', ['bakery', 'produce', 'pantry', 'prepared_meals'], 25, ['ambient', 'chilled'], 1439, 1, 'donation', 0.94],
@@ -163,11 +167,13 @@ function addAudit(db, role, action, entityType, entityId, metadata = {}) {
 function currentListing(db, listingId) {
   return db.prepare('SELECT * FROM surplus_listings WHERE id=?').get(listingId);
 }
-function insertListing(db, fields) {
+function insertListing(db, fields, sourceRole = 'donor') {
   const id = randomUUID(), now = nowIso();
-  const businessLocation = db.prepare('SELECT lat,lon FROM organizations WHERE id=?').get('golden-crust');
+  const businessId=sourceRole==='household'?'household-community':'golden-crust';
+  const businessLocation = db.prepare('SELECT lat,lon FROM organizations WHERE id=?').get(businessId);
+  const pickupLat=fields.pickupLat??businessLocation.lat,pickupLon=fields.pickupLon??businessLocation.lon;
   db.prepare(`INSERT INTO surplus_listings(id,business_id,food_name,category,quantity,unit,pickup_location,pickup_lat,pickup_lon,prepared_at,expiry_type,expiry_at,best_before_at,storage_condition,allergens,food_condition,pickup_deadline,pickup_window_start,pickup_window_end,strategy_preference,business_attested,status,created_at,updated_at)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, 'golden-crust', fields.foodName, fields.category, fields.quantity, fields.unit, fields.pickupLocation || 'Kadıköy, Istanbul', businessLocation.lat, businessLocation.lon, fields.preparedAt ?? null, fields.expiryType, fields.expiryAt ?? null, fields.bestBeforeAt ?? null, fields.storage, fields.allergens, fields.condition, fields.pickupDeadline, fields.pickupWindowStart ?? null, fields.pickupDeadline, fields.preference, fields.attested ? 1 : 0, 'AVAILABLE', now, now);
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, businessId, fields.foodName, fields.category, fields.quantity, fields.unit, fields.pickupLocation || 'Kadıköy, Istanbul', pickupLat, pickupLon, fields.preparedAt ?? null, fields.expiryType, fields.expiryAt ?? null, fields.bestBeforeAt ?? null, fields.storage, fields.allergens, fields.condition, fields.pickupDeadline, fields.pickupWindowStart ?? null, fields.pickupDeadline, fields.preference, fields.attested ? 1 : 0, 'AVAILABLE', now, now);
   db.prepare('INSERT INTO app_meta(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('activeListingId', id);
   return id;
 }
@@ -189,6 +195,7 @@ export function loadDemoScenario(db, key = 'recovery', role = 'coordinator') {
 }
 
 export function createListing(db, raw, role = 'donor') {
+  const household=role==='household';
   const fields = {
     foodName: String(raw.foodName ?? '').trim(), category: raw.category,
     quantity: Number(raw.quantity), unit: raw.unit,
@@ -196,7 +203,8 @@ export function createListing(db, raw, role = 'donor') {
     expiryAt: raw.expiryAt || null, bestBeforeAt: raw.bestBeforeAt || null,
     storage: raw.storage || 'unknown', allergens: String(raw.allergens ?? 'Unknown').trim(),
     condition: raw.condition || 'unknown', pickupDeadline: raw.pickupDeadline,
-    pickupLocation: String(raw.pickupLocation ?? '').trim(), pickupWindowStart: raw.pickupWindowStart || null, preference: raw.preference || 'donation',
+    pickupLocation: String(raw.pickupLocation ?? '').trim(), pickupWindowStart: raw.pickupWindowStart || null, preference: household?'donation':raw.preference || 'donation',
+    pickupLat:raw.pickupLat==null?null:Number(raw.pickupLat),pickupLon:raw.pickupLon==null?null:Number(raw.pickupLon),
     attested: raw.attested === true
   };
   if (!fields.foodName || fields.foodName.length > 80 || !['bakery','produce','dairy','prepared_meals','pantry','other'].includes(fields.category)
@@ -207,14 +215,17 @@ export function createListing(db, raw, role = 'donor') {
     || !['reported_intact','damaged','unknown'].includes(fields.condition)
     || !['donation','discounted_sale','split'].includes(fields.preference) || !fields.pickupLocation || fields.pickupLocation.length > 160
     || fields.allergens.length > 240 || !Number.isFinite(Date.parse(fields.pickupDeadline))
+    || (household&&(!fields.attested||fields.storage==='unknown'||fields.condition!=='reported_intact'||fields.expiryType==='unknown'||!fields.allergens||fields.allergens.toLowerCase()==='unknown'))
+    || (fields.pickupLat!==null&&(!Number.isFinite(fields.pickupLat)||Math.abs(fields.pickupLat)>90))
+    || (fields.pickupLon!==null&&(!Number.isFinite(fields.pickupLon)||Math.abs(fields.pickupLon)>180))
     || new Date(fields.pickupDeadline) <= new Date() || new Date(fields.pickupDeadline) > new Date(Date.now() + 24 * 60 * 60_000)) {
     throw Object.assign(new Error('Check food name, category, quantity, unit, storage, offer preference, and a pickup deadline within 24 hours.'), { status: 400 });
   }
   if (fields.expiryType === 'use_by' && !Number.isFinite(Date.parse(fields.expiryAt))) throw Object.assign(new Error('Enter the stated use-by date.'), { status: 400 });
   if (fields.expiryType === 'best_before' && !Number.isFinite(Date.parse(fields.bestBeforeAt))) throw Object.assign(new Error('Enter the stated best-before date.'), { status: 400 });
   return tx(db, () => {
-    const id = insertListing(db, fields);
-    addEvent(db, id, 'LISTING_CREATED', role, `Business reported ${fields.quantity} ${fields.unit} of ${fields.foodName}.`, { category: fields.category, pickupDeadline: fields.pickupDeadline });
+    const id = insertListing(db, fields, role);
+    addEvent(db, id, 'LISTING_CREATED', role, `${household?'Community member shared':'Business reported'} ${fields.quantity} ${fields.unit} of ${fields.foodName}${household?' as a free household donation':''}.`, { category: fields.category, pickupDeadline: fields.pickupDeadline });
     addAudit(db, role, 'surplus_listing_created', 'surplus_listing', id, { category: fields.category, quantity: fields.quantity, unit: fields.unit });
     return getSecondServeState(db);
   });
@@ -500,7 +511,7 @@ export function verifyPickup(db, listingId, offerId, quantity, role = 'coordinat
 
 function mapListing(row) {
   if (!row) return null;
-  const business = row.business_id && { id: row.business_id, name: row.business_id === 'golden-crust' ? 'Golden Crust Bakery' : row.business_id };
+  const business = row.business_id && { id: row.business_id, name: row.business_id === 'golden-crust' ? 'Golden Crust Bakery' : row.business_id==='household-community'?'Community donor':row.business_id };
   return { id: row.id, business, foodName: row.food_name, category: row.category, quantity: row.quantity, unit: row.unit, pickupLocation: row.pickup_location,
     preparedAt: row.prepared_at, expiryType: row.expiry_type, expiryAt: row.expiry_at, bestBeforeAt: row.best_before_at,
     storage: row.storage_condition, allergens: row.allergens, condition: row.food_condition, pickupDeadline: row.pickup_deadline,

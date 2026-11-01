@@ -33,6 +33,10 @@ Open <http://127.0.0.1:4173>. The SQLite demo database is created under ignored 
 
 The scheduler uses deterministic stock math; Muse Spark is not asked to infer sales or inventory. Unknown allergens, unconfirmed handling, expired pickup windows, or missing provider attestation prevent the batch from being listed automatically.
 
+## Household free donations
+
+Choose **Donate from home** on the demo role screen or **Donate leftover food** from the nearby page. Household posts are donation-only (the server forces the preference to `donation`), require the donor to confirm declared allergen, date, storage, condition, and pickup details, and appear on the nearby board while active. The coordinator demo can evaluate them for recipient partners. Use a neighborhood or public pickup point only; do not enter a home address or private contact details. Household posts remain in the local demo database; there is no real public network, contact exchange, or pickup booking.
+
 Offers and partner registry data are simulated; no outside organizations are contacted.
 
 ## Meta Muse Spark tooling
