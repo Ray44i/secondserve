@@ -60,6 +60,31 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS provider_batches (
+  id TEXT PRIMARY KEY, business_id TEXT NOT NULL REFERENCES organizations(id),
+  food_name TEXT NOT NULL, category TEXT NOT NULL, opening_quantity REAL NOT NULL, unit TEXT NOT NULL,
+  retail_price_try REAL NOT NULL, discount_percent INTEGER NOT NULL,
+  pickup_location TEXT NOT NULL, pickup_lat REAL NOT NULL, pickup_lon REAL NOT NULL,
+  pickup_deadline TEXT NOT NULL, allergens TEXT NOT NULL, storage_condition TEXT NOT NULL,
+  food_condition TEXT NOT NULL, expiry_type TEXT NOT NULL, expiry_at TEXT,
+  business_attested INTEGER NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL,
+  market_offer_id TEXT
+);
+CREATE TABLE IF NOT EXISTS provider_market_offers (
+  id TEXT PRIMARY KEY, batch_id TEXT NOT NULL UNIQUE REFERENCES provider_batches(id) ON DELETE CASCADE,
+  opened_at TEXT NOT NULL, status TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS provider_sales (
+  id TEXT PRIMARY KEY, batch_id TEXT NOT NULL REFERENCES provider_batches(id) ON DELETE CASCADE,
+  quantity REAL NOT NULL, source TEXT NOT NULL, external_ref TEXT, sold_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_provider_sale_ref ON provider_sales(batch_id, external_ref) WHERE external_ref IS NOT NULL;
+CREATE TABLE IF NOT EXISTS marketplace_purchases (
+  id TEXT PRIMARY KEY, batch_id TEXT NOT NULL REFERENCES provider_batches(id) ON DELETE CASCADE,
+  quantity REAL NOT NULL, purchase_ref TEXT NOT NULL UNIQUE, purchased_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_provider_batches_day ON provider_batches(created_at, status);
+CREATE INDEX IF NOT EXISTS idx_provider_sales_batch ON provider_sales(batch_id, sold_at);
 CREATE INDEX IF NOT EXISTS idx_events_listing ON agent_events(listing_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_offers_listing ON offers(listing_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_matches_listing ON matches(listing_id, attempt, eligible, score);

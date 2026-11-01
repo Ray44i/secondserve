@@ -2,7 +2,7 @@ import { DEMO_CENTER, NEIGHBORHOODS, recommendFoodListings } from './secondserve
 const $ = (id) => document.getElementById(id);
 const savedSession = (() => { try { return JSON.parse(sessionStorage.getItem('secondserve.demo.session') || '{}'); } catch { return {}; } })();
 const savedProfile = (() => { try { return JSON.parse(localStorage.getItem('secondserve.food.profile') || 'null'); } catch { return null; } })();
-const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null, foodPhotoDataUrl:'' };
+const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null, foodPhotoDataUrl:'',batchPhotoDataUrl:'',providerBatches:[],activeProviderBatch:null };
 const roleNames = { neighbor:'Food seeker', donor: 'Food business', coordinator: 'Rescue coordinator', recipient: 'Recipient partner' };
 const marketCategories = [
   { value:'Bakery',label:'Bakery & bread',icon:'♨' },{ value:'Produce',label:'Fruit & veg',icon:'✿' },
@@ -34,6 +34,7 @@ async function login(role) {
     setView(role==='neighbor'?'nearby':'operations');
     await refresh();
     if(role==='neighbor') await loadMarketplace();
+    if(role==='donor') await loadProviderBatches();
     if(role==='coordinator'&&!state.data?.activeListing) toast('Choose a scenario and load the recovery workspace.');
   } catch(e) { toast(e.message); }
 }
@@ -43,6 +44,7 @@ function statusPill(el, value) { el.textContent=value||'WAITING'; el.dataset.sta
 function render(d) {
   state.data=d; const item=d.activeListing, offer=activeOffer(d);
   $('workflow').hidden=state.role!=='coordinator';
+  $('providerPanel').hidden=state.role!=='donor';
   $('reportedMetric').textContent=fmtUnits(d.impactSummary.reportedByUnit);
   $('acceptedMetric').textContent=fmtUnits(d.impactSummary.acceptedByUnit);
   $('rescuedMetric').textContent=fmtUnits(d.impactSummary.verifiedByUnit);
@@ -166,13 +168,32 @@ function renderMarketplace(){
     const price=item.offerType==='donation'?'FREE':`${fmtNum(item.priceTry)} ₺`;
     const pickLabel=item.recommended?`<div class="recommendation-badge">✦ RECOMMENDED FOR YOU · ${safe(item.recommendationReason)}</div>`:'';
     const category=marketCategories.find(value=>value.value===item.category);
-    card.innerHTML=`<div>${pickLabel}<div class="market-card-labels"><span class="category-pill"><i aria-hidden="true">${category?.icon||'•'}</i>${safe(category?.label||item.category)}</span><span class="market-type ${item.offerType==='discounted_sale'?'discount':''}">${item.offerType==='donation'?'FREE DONATION':'DISCOUNTED'}</span></div><h3>${safe(item.name)}</h3><div class="market-business">${safe(item.business)}</div><p>${safe(item.note)}</p></div><div class="market-price">${price}<small>${item.offerType==='donation'?'NO COST':'DEMO PRICE'}</small></div><div class="market-card-foot"><span><b>${fmtNum(item.quantity)} ${safe(item.unit)}</b></span><span>${safe(item.location)}</span><span><b>${item.distanceKm.toFixed(1)} km</b> approx.</span><span>Pickup window ${Math.max(1,Math.round((Date.parse(item.pickupUntil)-Date.now())/60000))} min</span></div>`;
+    card.innerHTML=`<div>${pickLabel}<div class="market-card-labels"><span class="category-pill"><i aria-hidden="true">${category?.icon||'•'}</i>${safe(category?.label||item.category)}</span><span class="market-type ${item.offerType==='discounted_sale'?'discount':''}">${item.offerType==='donation'?'FREE DONATION':item.discountPercent?`${item.discountPercent}% OFF`:'DISCOUNTED'}</span></div><h3>${safe(item.name)}</h3><div class="market-business">${safe(item.business)}</div><p>${safe(item.note)}</p></div><div class="market-price">${price}<small>${item.regularPriceTry?`WAS ${fmtNum(item.regularPriceTry)} ₺`:(item.offerType==='donation'?'NO COST':'DEMO PRICE')}</small></div><div class="market-card-foot"><span><b>${fmtNum(item.quantity)} ${safe(item.unit)}</b> left</span><span>${safe(item.location)}</span><span><b>${item.distanceKm.toFixed(1)} km</b> approx.</span><span>Pickup by ${when(item.pickupUntil)}</span></div>`;
+    if(item.purchaseable&&state.role==='neighbor'){
+      const buy=document.createElement('div');buy.className='quick-buy';const quantity=document.createElement('input');quantity.type='number';quantity.min='1';quantity.step='1';quantity.max=String(item.quantity);quantity.value='1';quantity.setAttribute('aria-label',`Quantity of ${item.name} to buy for pickup`);
+      const action=document.createElement('button');action.className='button primary';action.type='button';action.textContent='Buy for pickup · demo';action.title='Simulated purchase only; no payment is taken.';
+      action.onclick=async event=>{event.stopPropagation();action.disabled=true;try{const receipt=await request(`/api/secondserve/nearby/provider-${encodeURIComponent(item.batchId)}/purchase`,{method:'POST',body:{quantity:Number(quantity.value)}});await loadMarketplace();toast(`${receipt.quantity} ${receipt.unit} reserved for pickup. No payment was taken.`);}catch(error){toast(error.message);action.disabled=false;}};
+      const caveat=document.createElement('small');caveat.textContent='Demo checkout · no payment';buy.append(quantity,action,caveat);card.append(buy);
+    }
     const focus=()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');const marker=state.marketMarkers[index];if(marker){state.marketMap?.setView(marker.getLatLng(),15,{animate:true});marker.openPopup();}};
     card.onclick=focus;card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();focus();}};list.append(card);
     if(state.marketMap){const icon=L.divIcon({className:'',html:`<div class="food-marker ${item.offerType==='discounted_sale'?'discount':''}">${index+1}</div>`,iconSize:[31,31],iconAnchor:[15,15]});const marker=L.marker([item.lat,item.lon],{icon}).addTo(state.marketMap);marker.bindPopup(`<b>${safe(item.name)}</b><br>${safe(item.business)}<br>${safe(item.location)}<br>${price} · ${item.offerType==='donation'?'donation':'discounted demo offer'}`);marker.on('click',()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');card.scrollIntoView({block:'nearest',behavior:'smooth'});});state.marketMarkers.push(marker);}
   }
   if(state.marketMap&&state.userLocation){if(!state.userMarker)state.userMarker=L.marker([state.userLocation.lat,state.userLocation.lon],{icon:L.divIcon({className:'',html:'<div class="food-marker user"></div>',iconSize:[17,17],iconAnchor:[8,8]})}).addTo(state.marketMap);else state.userMarker.setLatLng([state.userLocation.lat,state.userLocation.lon]);state.userMarker.bindPopup('Your location (kept in this tab).');}
   if(state.marketMap&&!state.userLocation&&items.length){const bounds=L.latLngBounds(items.map(i=>[i.lat,i.lon]));if(items.length>1)state.marketMap.fitBounds(bounds.pad(.18));}
+}
+async function loadProviderBatches(){
+  if(state.role!=='donor'||!state.token)return;
+  try{const result=await request('/api/secondserve/provider/batches');state.providerBatches=result.batches||[];renderProviderBatches();}
+  catch(error){$('providerStatus').textContent=error.message;}
+}
+function renderProviderBatches(){
+  const host=$('providerBatches');if(!host)return;host.replaceChildren();
+  const live=state.providerBatches.filter(batch=>['TRACKING','LISTED'].includes(batch.status));state.activeProviderBatch=live[0]||null;$('recordPosSale').disabled=!state.activeProviderBatch;
+  if(!state.providerBatches.length){host.innerHTML='<div class="empty-state">Start a morning batch. The simulated POS will then update the remaining count.</div>';return;}
+  for(const batch of state.providerBatches){const row=document.createElement('article');row.className='provider-batch';const pct=Math.max(0,Math.min(100,batch.remainingQuantity/batch.openingQuantity*100));
+    row.innerHTML=`<div class="provider-batch-top"><b>${safe(batch.foodName)} · ${fmtNum(batch.openingQuantity)} ${safe(batch.unit)}</b><span>${safe(batch.status.replaceAll('_',' '))}</span></div><div class="provider-batch-meta"><span>POS sold ${fmtNum(batch.soldQuantity)}</span><span>Customer pickups ${fmtNum(batch.purchasedQuantity)}</span><span><b>${fmtNum(batch.remainingQuantity)} ${safe(batch.unit)} remaining</b></span><span>${batch.discountPercent}% evening discount</span></div><div class="provider-stockbar"><i style="width:${pct}%"></i></div><div class="provider-batch-meta"><span>Auto closeout 21:00 Europe/Istanbul · pickup by ${when(batch.pickupDeadline)}</span></div>`;host.append(row);
+  }
 }
 function renderCategoryFilters(){
   const host=$('marketCategoryFilters');if(!host)return;
@@ -216,6 +237,46 @@ $('switchRole').onclick=()=>{state.token='';state.role='';state.organizationId='
 $('loadScenario').onclick=()=>doAction('/api/secondserve/demo/load',{scenario:$('scenario').value});
 $('runAgent').onclick=()=>doAction('/api/secondserve/agent/run');
 $('dispatchOffer').onclick=()=>doAction('/api/secondserve/offers/dispatch');
+$('productionForm').onsubmit=async event=>{
+  event.preventDefault();if(state.role!=='donor')return;
+  const expiryType=$('batchExpiryType').value,expiryDate=$('batchExpiryDate').value;
+  const body={foodName:$('batchFoodName').value.trim(),category:$('batchCategory').value,openingQuantity:Number($('batchOpening').value),unit:$('batchUnit').value,
+    retailPriceTry:Number($('batchPrice').value),discountPercent:Number($('batchDiscount').value),pickupLocation:$('batchPickupLocation').value.trim(),pickupDeadline:new Date($('batchPickupDeadline').value).toISOString(),
+    allergens:$('batchAllergens').value.trim(),storage:$('batchStorage').value,condition:'reported_intact',expiryType,
+    expiryAt:expiryType!=='not_applicable'&&expiryDate?new Date(`${expiryDate}T23:59:00`).toISOString():null,attested:$('batchAttested').checked};
+  $('providerStatus').textContent='Saving the morning batch…';
+  try{const result=await request('/api/secondserve/provider/batches',{method:'POST',body});$('providerStatus').textContent=`Batch started. ${fmtNum(result.batch.openingQuantity)} ${result.batch.unit} will be reconciled with POS sales.`;state.providerBatches.unshift(result.batch);renderProviderBatches();$('batchFoodName').value='';$('batchOpening').value='';$('batchPrice').value='';$('batchAllergens').value='';$('batchAttested').checked=false;toast('Morning batch started. POS sales will reduce available stock.');}
+  catch(error){$('providerStatus').textContent=error.message;toast(error.message);}
+};
+$('recordPosSale').onclick=async()=>{
+  const batch=state.activeProviderBatch,quantity=Number($('posSaleQty').value);if(!batch||!quantity)return;
+  $('recordPosSale').disabled=true;
+  try{const result=await request(`/api/secondserve/provider/batches/${encodeURIComponent(batch.id)}/sales`,{method:'POST',body:{quantity}});$('posSaleQty').value='';state.providerBatches=state.providerBatches.map(item=>item.id===batch.id?result.batch:item);await loadProviderBatches();toast(`${fmtNum(quantity)} ${batch.unit} sale synced. ${fmtNum(result.batch.remainingQuantity)} remain.`);}
+  catch(error){toast(error.message);$('recordPosSale').disabled=false;}
+};
+$('batchExpiryType').onchange=()=>{$('batchExpiryDateWrap').hidden=$('batchExpiryType').value==='not_applicable';};
+$('batchPhoto').onchange=async()=>{
+  const file=$('batchPhoto').files?.[0];state.batchPhotoDataUrl='';$('batchPhotoPreview').hidden=true;updateBatchPhotoButton();
+  if(!file){$('batchPhotoStatus').textContent='Nothing is sent until consent and button click.';return;}
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>12*1024*1024){$('batchPhotoStatus').textContent='Choose a JPEG, PNG, or WebP image smaller than 12 MB.';$('batchPhoto').value='';return;}
+  $('batchPhotoStatus').textContent='Resizing in this browser…';
+  try{const bitmap=await createImageBitmap(file),scale=Math.min(1,1536/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));canvas.getContext('2d',{alpha:false}).drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
+    const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('Could not resize the image.')),'image/jpeg',.78));if(blob.size>3*1024*1024)throw new Error('Resized image exceeds the 3 MB limit. Choose a smaller photo.');
+    state.batchPhotoDataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Could not read the image.'));reader.readAsDataURL(blob);});$('batchPhotoPreview').src=state.batchPhotoDataUrl;$('batchPhotoPreview').hidden=false;$('batchPhotoStatus').textContent=`Preview ready (${fmtNum(blob.size/1024)} KB). Not sent yet.`;
+  }catch(error){state.batchPhotoDataUrl='';$('batchPhotoStatus').textContent=error.message;}
+  updateBatchPhotoButton();
+};
+$('batchPhotoConsent').onchange=updateBatchPhotoButton;
+$('analyzeBatchPhoto').onclick=async()=>{
+  if(!state.model||!state.batchPhotoDataUrl||!$('batchPhotoConsent').checked)return;
+  $('analyzeBatchPhoto').disabled=true;$('batchPhotoStatus').textContent='Sending the resized image to Meta. It may use credits; verify the suggestion.';
+  try{const result=await request('/api/secondserve/intake/vision',{method:'POST',body:{consent:true,dataUrl:state.batchPhotoDataUrl}}),draft=result.draft;
+    if(draft.foodName&&draft.foodName.toLowerCase()!=='unknown')$('batchFoodName').value=draft.foodName;
+    $('batchCategory').value=draft.category==='unknown'?'other':draft.category;
+    $('batchPhotoStatus').textContent=`${result.model} suggests: ${draft.visibleDescription} · uncertainty ${draft.uncertainty}. You still enter the morning quantity and verify every business fact.`;
+  }catch(error){$('batchPhotoStatus').textContent=error.message;toast(error.message);}finally{updateBatchPhotoButton();}
+};
+function updateBatchPhotoButton(){const button=$('analyzeBatchPhoto');if(button)button.disabled=!state.model||!state.batchPhotoDataUrl||!$('batchPhotoConsent')?.checked;}
 $('askMuseBrief').onclick=async()=>{
   const button=$('askMuseBrief');button.disabled=true;$('museBrief').hidden=true;button.textContent='Preparing advisory brief…';
   try {
@@ -290,11 +351,18 @@ function updateVisionButton(){const button=$('analyzeFoodPhoto');if(button)butto
 $('expiryType').onchange=()=>{const value=$('expiryType').value;$('expiryDateWrap').hidden=['unknown','not_applicable'].includes(value);};
 function localDateTimeInput(date) {const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);return local.toISOString().slice(0,16);}
 const now=new Date();$('pickupDeadline').value=localDateTimeInput(new Date(now.getTime()+75*60000));$('preparedAt').value=localDateTimeInput(new Date(now.getTime()-120*60000));
+$('batchPickupDeadline').value=localDateTimeInput(new Date(now.getTime()+3*60*60000));
 async function boot() {
-  try {const status=await request('/api/secondserve/status',{auth:false});state.model=Boolean(status.modelEnabled);$('modelStatus').innerHTML=`<i></i> ${state.model?'Muse Spark · opt-in tools':'Muse Spark disabled'}`;$('modelStatus').classList.toggle('ready',state.model);$('parseNote').disabled=!state.model;updateVisionButton();}
+  try {const status=await request('/api/secondserve/status',{auth:false});state.model=Boolean(status.modelEnabled);$('modelStatus').innerHTML=`<i></i> ${state.model?'Muse Spark · opt-in tools':'Muse Spark disabled'}`;$('modelStatus').classList.toggle('ready',state.model);$('parseNote').disabled=!state.model;updateVisionButton();updateBatchPhotoButton();}
   catch {$('modelStatus').textContent='Server unavailable';}
   try {state.data=await request('/api/secondserve/state');} catch(e) {toast(e.message);return;}
   await loadMarketplace();
-  if(state.token&&state.role){try{render(state.data);$('loginScreen').hidden=true;$('appShell').hidden=false;$('roleLabel').textContent=roleNames[state.role]+(state.organizationId?` · ${orgName(state.organizationId)}`:'');setView(state.role==='neighbor'?'nearby':'operations');}catch{showLogin();}}
+  if(state.token&&state.role){try{render(state.data);$('loginScreen').hidden=true;$('appShell').hidden=false;$('roleLabel').textContent=roleNames[state.role]+(state.organizationId?` · ${orgName(state.organizationId)}`:'');setView(state.role==='neighbor'?'nearby':'operations');if(state.role==='donor')await loadProviderBatches();}catch{showLogin();}}
 }
+// Keep the buyer board and provider ledger fresh while a demo role is open.
+setInterval(()=>{
+  if(document.hidden)return;
+  if(state.role==='neighbor')loadMarketplace();
+  else if(state.role==='donor')loadProviderBatches();
+},30_000);
 boot();

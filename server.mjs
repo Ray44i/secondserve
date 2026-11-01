@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import OpenAI from 'openai';
 import { decodeMaskToSVGPath, parseImageStream, recordsOfKind } from '@meta-sam/parser';
 import { decodeImageDataUrl as decodeImageFromBytes, validateFactorySight as validateFactorySightData, validateInspectionFields } from './factorysight-validation.mjs';
-import { acceptOffer as secondServeAcceptOffer, cancelAcceptedOffer, createListing as secondServeCreateListing, declineOffer as secondServeDeclineOffer, dispatchOffer as secondServeDispatchOffer, getNearbyDemoListings, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, runDecisionAgent, verifyPickup } from './secondserve-domain.mjs';
+import { acceptOffer as secondServeAcceptOffer, cancelAcceptedOffer, createListing as secondServeCreateListing, createProviderBatch, declineOffer as secondServeDeclineOffer, dispatchOffer as secondServeDispatchOffer, getNearbyListings, getProviderBatches, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, purchaseProviderOffer, recordProviderSale, runDecisionAgent, runProviderEveningCloseout, verifyPickup } from './secondserve-domain.mjs';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
 try {
@@ -413,7 +413,7 @@ async function secondServeRoute(request, response, url) {
   const path = url.pathname, method = request.method;
   try {
     if (method === 'GET' && path === '/api/secondserve/status') return sendJson(response, 200, { modelEnabled: secondServeModelEnabled, model: process.env.MODEL_API_MODEL || 'muse-spark-1.3', persistence: 'sqlite', simulatedNetwork: true });
-    if (method === 'GET' && path === '/api/secondserve/nearby') return sendJson(response, 200, { listings: getNearbyDemoListings(), demo: true, source: 'fictional-seed-data', reservationEnabled: false });
+    if (method === 'GET' && path === '/api/secondserve/nearby') return sendJson(response, 200, { listings: getNearbyListings(secondServeDb), demo: true, source: 'fictional-seed-data', reservationEnabled: false });
     if (method === 'GET' && path === '/api/secondserve/state') return sendJson(response, 200, getSecondServeState(secondServeDb));
     if (method === 'POST' && path === '/api/secondserve/session') {
       const body = await readJson(request, 2048), roles = ['neighbor','donor','coordinator','recipient'];
@@ -425,6 +425,23 @@ async function secondServeRoute(request, response, url) {
       }
       const token = randomUUID(); demoSessions.set(token, { role: body.role, organizationId, createdAt: Date.now() });
       return sendJson(response, 201, { token, role: body.role, organizationId, demoOnly: true });
+    }
+    if (method === 'GET' && path === '/api/secondserve/provider/batches') {
+      secondServeActor(request, ['donor']); return sendJson(response, 200, { batches:getProviderBatches(secondServeDb), closeoutTime:'21:00', timezone:'Europe/Istanbul', salesSource:'simulated POS feed' });
+    }
+    if (method === 'POST' && path === '/api/secondserve/provider/batches') {
+      const actor=secondServeActor(request,['donor']),body=await readJson(request,8192);
+      return sendJson(response,201,{batch:createProviderBatch(secondServeDb,body,actor.role),salesSource:'simulated POS feed'});
+    }
+    const providerSaleRoute=path.match(/^\/api\/secondserve\/provider\/batches\/([^/]+)\/sales$/);
+    if(method==='POST'&&providerSaleRoute){
+      const actor=secondServeActor(request,['donor']),body=await readJson(request,2048);
+      return sendJson(response,200,{batch:recordProviderSale(secondServeDb,decodeURIComponent(providerSaleRoute[1]),body.quantity,{source:'simulated_pos',externalRef:typeof body.saleRef==='string'?body.saleRef:null})});
+    }
+    const customerPurchaseRoute=path.match(/^\/api\/secondserve\/nearby\/provider-([^/]+)\/purchase$/);
+    if(method==='POST'&&customerPurchaseRoute){
+      secondServeActor(request,['neighbor']);const body=await readJson(request,2048);
+      return sendJson(response,200,purchaseProviderOffer(secondServeDb,decodeURIComponent(customerPurchaseRoute[1]),body.quantity));
     }
     if (method === 'POST' && path === '/api/secondserve/demo/load') {
       secondServeActor(request, ['coordinator']); const body = await readJson(request, 2048);
@@ -586,6 +603,15 @@ const server = createServer(async (request, response) => {
     return response.end('Not found');
   }
 });
+
+function providerCloseoutTick() {
+  try {
+    const released=runProviderEveningCloseout(secondServeDb);
+    if(released.length)console.log(`[SecondServe] automatic 21:00 local closeout released ${released.length} discounted demo offer(s).`);
+  } catch (error) { console.error(`[SecondServe] provider closeout could not run: ${error.name||'Error'}`); }
+}
+providerCloseoutTick();
+const providerCloseoutTimer=setInterval(providerCloseoutTick,30_000);providerCloseoutTimer.unref();
 
 server.listen(port, '127.0.0.1', () => {
   console.log(`SecondServe local preview: http://127.0.0.1:${port}`);

@@ -1,6 +1,6 @@
 # SecondServe
 
-**Surplus food, routed with care.** SecondServe is a solo-builder prototype of an AI-assisted food rescue coordinator with a nearby surplus board for donation and discounted-food discovery. It turns a reported batch into a traceable workflow: confirm facts, hold incomplete listings for human review, rank eligible recipient partners, simulate offers, recover from cancellation, and count food as rescued only after pickup quantity is verified.
+**Surplus food, routed with care.** SecondServe is a solo-builder prototype of an AI-assisted food rescue network. Providers enter the morning production quantity once; sale events reconcile stock; a local scheduler releases eligible leftovers to the nearby board at 21:00 Europe/Istanbul using a preset discount. Customers can browse the discount and simulate a pickup purchase. The prototype also coordinates recipient-partner rescues, recovers from cancellations, and counts food as rescued only after pickup quantity is verified.
 
 ## Run locally
 
@@ -24,6 +24,15 @@ Open <http://127.0.0.1:4173>. The SQLite demo database is created under ignored 
 6. Accept the replacement, report a pickup as the recipient, and verify a quantity as coordinator. Only that verified quantity enters the impact ledger.
 7. Try the review scenario to see incomplete handling facts blocked from automatic matching.
 
+## Provider closeout loop
+
+1. Choose **Food business** and enter a morning batch: product, quantity made, unit, regular price, evening discount, pickup deadline, and provider-confirmed handling/date/allergen facts. A resized product photo can optionally help Muse Spark suggest the visible name/category; it cannot count pieces or verify safety.
+2. In the prototype, use **Record sale event** to simulate a POS sale. A real POS connector would send these idempotent sale events automatically; no register vendor is connected here.
+3. The local server runs the 21:00 Istanbul closeout. It reconciles opening stock minus POS sales, then adds the remaining eligible quantity to the nearby discounted offers. Restarting the server also runs any missed closeout.
+4. Choose **Find food nearby** and select **Food seeker** to see the offer. **Buy for pickup · demo** reduces the same inventory count; it does not take payment or create a real booking.
+
+The scheduler uses deterministic stock math; Muse Spark is not asked to infer sales or inventory. Unknown allergens, unconfirmed handling, expired pickup windows, or missing provider attestation prevent the batch from being listed automatically.
+
 Offers and partner registry data are simulated; no outside organizations are contacted.
 
 ## Meta Muse Spark tooling
@@ -42,6 +51,7 @@ No model request is made implicitly. Every generated result is advisory and must
 - Login roles are demo role selectors, not authentication or production RBAC.
 - Food-finder profiles are stored in this browser only. The neighborhood sets an approximate map center; the address field is a private note and is not used for routing.
 - Nearby businesses, products, prices, pickup windows, recipient records, verification badges, coordinates, capacity, and availability are fictional demo fixtures. OpenStreetMap provides real map tiles, but there is no live business inventory, geocoder, or booking flow. Location sorting is approximate; the location is kept in the current tab.
+- Provider batches, point-of-sale events, evening offers, and customer purchases are also simulated; the app has no real POS, payment, or marketplace integration. The local scheduler must be running or restarted to publish at closeout time.
 - Notifications are simulated. No recipient receives an actual email, SMS, or push message.
 - Food-photo suggestions and coordinator briefs are AI-generated and can be wrong; neither is a safety inspection or an authority for handling decisions.
 - Split allocation requires coordinator review.

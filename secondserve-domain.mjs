@@ -26,6 +26,106 @@ export function getNearbyDemoListings() {
   ];
 }
 
+function providerInventory(db, batchId) {
+  const batch = db.prepare('SELECT * FROM provider_batches WHERE id=?').get(batchId);
+  if (!batch) throw Object.assign(new Error('Production batch not found.'), { status: 404 });
+  const sold = Number(db.prepare('SELECT COALESCE(SUM(quantity),0) AS n FROM provider_sales WHERE batch_id=?').get(batchId).n);
+  const purchased = Number(db.prepare('SELECT COALESCE(SUM(quantity),0) AS n FROM marketplace_purchases WHERE batch_id=?').get(batchId).n);
+  return { ...batch, soldQuantity:sold, purchasedQuantity:purchased, remainingQuantity:Math.max(0,batch.opening_quantity-sold-purchased) };
+}
+
+export function createProviderBatch(db, raw, role = 'donor', now = new Date()) {
+  const foodName=String(raw.foodName??'').trim(), category=String(raw.category??''), unit=String(raw.unit??''),
+    opening=Number(raw.openingQuantity), price=Number(raw.retailPriceTry), discount=Number(raw.discountPercent),
+    pickupLocation=String(raw.pickupLocation??'').trim(), allergens=String(raw.allergens??'').trim(),
+    storage=String(raw.storage??''), condition=String(raw.condition??''), expiryType=String(raw.expiryType??''),
+    expiryAt=raw.expiryAt||null, pickupDeadline=String(raw.pickupDeadline??'');
+  if (!foodName||foodName.length>80||!['bakery','produce','dairy','prepared_meals','pantry','other'].includes(category)
+    ||!Number.isFinite(opening)||opening<=0||opening>10000||!['pieces','packs','boxes','portions','loaves','bottles','kg'].includes(unit)
+    ||!Number.isFinite(price)||price<=0||price>1000000||!Number.isInteger(discount)||discount<10||discount>80
+    ||!pickupLocation||pickupLocation.length>160||!allergens||allergens.length>240||allergens.toLowerCase()==='unknown'||!['ambient','chilled','frozen'].includes(storage)
+    ||condition!=='reported_intact'||!['use_by','best_before','not_applicable'].includes(expiryType)
+    ||(expiryType!=='not_applicable'&&!Number.isFinite(Date.parse(expiryAt)))||!Number.isFinite(Date.parse(pickupDeadline))
+    ||Date.parse(pickupDeadline)<=now.getTime()||Date.parse(pickupDeadline)>now.getTime()+24*60*60_000||raw.attested!==true) {
+    throw Object.assign(new Error('Confirm the morning quantity, price, pickup deadline, handling and date facts, allergens, and provider attestation.'),{status:400});
+  }
+  const business=db.prepare("SELECT id,lat,lon FROM organizations WHERE id='golden-crust'").get();
+  const id=randomUUID(), created=now.toISOString();
+  tx(db,()=>db.prepare(`INSERT INTO provider_batches(id,business_id,food_name,category,opening_quantity,unit,retail_price_try,discount_percent,pickup_location,pickup_lat,pickup_lon,pickup_deadline,allergens,storage_condition,food_condition,expiry_type,expiry_at,business_attested,status,created_at,market_offer_id)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'TRACKING',?,NULL)`).run(id,business.id,foodName,category,opening,unit,price,discount,pickupLocation,business.lat,business.lon,pickupDeadline,allergens,storage,condition,expiryType,expiryType==='not_applicable'?null:expiryAt,created));
+  return getProviderBatches(db).find(batch=>batch.id===id);
+}
+
+export function recordProviderSale(db, batchId, quantity, {source='simulated_pos',externalRef=null,now=new Date()}={}) {
+  const amount=Number(quantity);
+  if(!Number.isFinite(amount)||amount<=0||amount>10000||!['simulated_pos','pos_webhook'].includes(source))throw Object.assign(new Error('Provide a valid positive sale quantity.'),{status:400});
+  return tx(db,()=>{
+    const batch=providerInventory(db,batchId);
+    if(!['TRACKING','LISTED'].includes(batch.status))throw Object.assign(new Error('This batch is no longer receiving point-of-sale sale events.'),{status:409});
+    if(externalRef&&db.prepare('SELECT 1 FROM provider_sales WHERE batch_id=? AND external_ref=?').get(batchId,externalRef))return providerInventory(db,batchId);
+    if(amount>batch.remainingQuantity)throw Object.assign(new Error(`Sale exceeds available stock (${batch.remainingQuantity} ${batch.unit} remain).`),{status:409});
+    const id=randomUUID();db.prepare('INSERT INTO provider_sales(id,batch_id,quantity,source,external_ref,sold_at) VALUES(?,?,?,?,?,?)').run(id,batchId,amount,source,externalRef,now.toISOString());
+    const updated=providerInventory(db,batchId);
+    if(updated.remainingQuantity===0){db.prepare("UPDATE provider_batches SET status='SOLD_OUT' WHERE id=?").run(batchId);db.prepare("UPDATE provider_market_offers SET status='SOLD_OUT' WHERE batch_id=?").run(batchId);}
+    return providerInventory(db,batchId);
+  });
+}
+
+export function runProviderEveningCloseout(db, now = new Date()) {
+  if(localMinute(now.toISOString())<21*60)return [];
+  const today=localDay(now.toISOString()), batches=db.prepare("SELECT * FROM provider_batches WHERE status='TRACKING'").all()
+    .filter(batch=>localDay(batch.created_at)<=today);
+  const published=[];
+  tx(db,()=>{
+    for(const row of batches){
+      const batch=providerInventory(db,row.id);
+      if(Date.parse(batch.pickup_deadline)<=now.getTime()){db.prepare("UPDATE provider_batches SET status='EXPIRED' WHERE id=?").run(row.id);continue;}
+      if(batch.remainingQuantity<=0){db.prepare("UPDATE provider_batches SET status='SOLD_OUT' WHERE id=?").run(row.id);continue;}
+      const offerId=randomUUID();db.prepare('INSERT INTO provider_market_offers(id,batch_id,opened_at,status) VALUES(?,?,?,?)').run(offerId,row.id,now.toISOString(),'OPEN');
+      db.prepare("UPDATE provider_batches SET status='LISTED',market_offer_id=? WHERE id=?").run(offerId,row.id);
+      published.push({batchId:row.id,offerId,quantity:batch.remainingQuantity,discountPercent:batch.discount_percent});
+    }
+  });
+  return published;
+}
+
+export function runProviderDemoCloseout(db, now = new Date()) {
+  if(localMinute(now.toISOString())>=21*60)throw Object.assign(new Error('It is already 21:00 or later; the real scheduler handles closeout automatically.'),{status:409});
+  const closeoutAt=new Date(`${localDay(now.toISOString())}T21:00:00+03:00`);
+  return runProviderEveningCloseout(db,closeoutAt);
+}
+
+export function getProviderBatches(db) {
+  return db.prepare('SELECT id FROM provider_batches ORDER BY created_at DESC').all().map(row=>{
+    const b=providerInventory(db,row.id);return {id:b.id,foodName:b.food_name,category:b.category,openingQuantity:b.opening_quantity,soldQuantity:b.soldQuantity,
+      purchasedQuantity:b.purchasedQuantity,remainingQuantity:b.remainingQuantity,unit:b.unit,retailPriceTry:b.retail_price_try,discountPercent:b.discount_percent,
+      pickupLocation:b.pickup_location,pickupDeadline:b.pickup_deadline,status:b.status,createdAt:b.created_at,marketOfferId:b.market_offer_id};
+  });
+}
+
+export function getNearbyListings(db) {
+  const title=category=>({bakery:'Bakery',produce:'Produce',dairy:'Dairy',prepared_meals:'Prepared meals',pantry:'Pantry',other:'Other'}[category]||category);
+  const dynamic=db.prepare("SELECT b.*,o.id AS offer_id FROM provider_batches b JOIN provider_market_offers o ON o.id=b.market_offer_id WHERE o.status='OPEN' AND b.status='LISTED' ORDER BY o.opened_at DESC").all()
+    .map(row=>{const b=providerInventory(db,row.id);return {id:`provider-${row.id}`,batchId:row.id,name:b.food_name,business:'Golden Crust Bakery',category:title(b.category),quantity:b.remainingQuantity,unit:b.unit,
+      offerType:'discounted_sale',priceTry:Math.round(b.retail_price_try*(1-b.discount_percent/100)*100)/100,regularPriceTry:b.retail_price_try,discountPercent:b.discount_percent,location:b.pickup_location,lat:b.pickup_lat,lon:b.pickup_lon,
+      pickupUntil:b.pickup_deadline,note:`Automatically discounted ${b.discount_percent}% at 9 PM · demo POS inventory · ask the business to confirm product details.`,purchaseable:true};});
+  return [...getNearbyDemoListings(),...dynamic];
+}
+
+export function purchaseProviderOffer(db, batchId, quantity, now = new Date()) {
+  const amount=Number(quantity);
+  if(!Number.isFinite(amount)||amount<=0||amount>10000)throw Object.assign(new Error('Choose a valid quantity.'),{status:400});
+  return tx(db,()=>{
+    const b=providerInventory(db,batchId);
+    if(b.status!=='LISTED'||!db.prepare("SELECT 1 FROM provider_market_offers WHERE batch_id=? AND status='OPEN'").get(batchId))throw Object.assign(new Error('This evening offer is no longer available.'),{status:409});
+    if(amount>b.remainingQuantity)throw Object.assign(new Error(`Only ${b.remainingQuantity} ${b.unit} remain.`),{status:409});
+    const receipt=randomUUID();db.prepare('INSERT INTO marketplace_purchases(id,batch_id,quantity,purchase_ref,purchased_at) VALUES(?,?,?,?,?)').run(randomUUID(),batchId,amount,receipt,now.toISOString());
+    const updated=providerInventory(db,batchId);if(updated.remainingQuantity===0)db.prepare("UPDATE provider_market_offers SET status='SOLD_OUT' WHERE batch_id=?").run(batchId);
+    const price=Math.round(b.retail_price_try*(1-b.discount_percent/100)*100)/100;
+    return {receipt,quantity:amount,unit:b.unit,totalTry:Math.round(amount*price*100)/100,remainingQuantity:updated.remainingQuantity,simulated:true,paymentTaken:false};
+  });
+}
+
 export function initializeSecondServe(db, schemaSql) {
   db.exec(schemaSql);
   db.exec('PRAGMA foreign_keys = ON;');

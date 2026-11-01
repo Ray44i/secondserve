@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { MATCH_WEIGHTS, acceptOffer, cancelAcceptedOffer, dispatchOffer, getNearbyDemoListings, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, runDecisionAgent, verifyPickup } from '../secondserve-domain.mjs';
+import { MATCH_WEIGHTS, acceptOffer, cancelAcceptedOffer, createProviderBatch, dispatchOffer, getNearbyDemoListings, getNearbyListings, getProviderBatches, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, purchaseProviderOffer, recordProviderSale, runDecisionAgent, runProviderEveningCloseout, verifyPickup } from '../secondserve-domain.mjs';
 import { recommendFoodListings } from '../secondserve-recommendations.mjs';
 
 function setup() {
@@ -71,7 +71,7 @@ test('safety hold blocks matching if key handling facts are missing', () => {
   const s=runDecisionAgent(db);
   assert.equal(s.activeListing.status,'NEEDS_REVIEW');
   assert.equal(s.offers.length,0);
-  const reason=s.events.at(-1).metadata.reasons.join(' ');
+  const reason=s.events.find(event=>event.type==='SAFETY_REVIEW_REQUIRED').metadata.reasons.join(' ');
   assert.match(reason,/storage condition is missing/i);
   assert.match(reason,/not attested/i);
   db.close();
@@ -131,4 +131,32 @@ test('without a profile, the food board sorts by distance and makes no personali
   const nearby=recommendFoodListings(listings,{profile:null,radiusKm:3});
   assert.ok(nearby.every((item,index)=>index===0||nearby[index-1].distanceKm<=item.distanceKm));
   assert.ok(nearby.every(item=>item.recommended===false));
+});
+
+test('morning production stock reconciles POS sales and auto-lists only leftovers at 21:00 Istanbul time', () => {
+  const db=setup(), morning=new Date('2026-11-01T10:00:00.000Z');
+  const batch=createProviderBatch(db,{foodName:'Chocolate chip cookies',category:'bakery',openingQuantity:20,unit:'pieces',retailPriceTry:2.5,discountPercent:30,
+    pickupLocation:'Kadıköy, Istanbul',pickupDeadline:'2026-11-01T20:30:00.000Z',allergens:'Wheat, milk, eggs',storage:'ambient',condition:'reported_intact',expiryType:'not_applicable',attested:true},'donor',morning);
+  assert.equal(batch.status,'TRACKING');assert.equal(batch.remainingQuantity,20);
+  recordProviderSale(db,batch.id,12,{externalRef:'register-event-1',now:new Date('2026-11-01T12:00:00.000Z')});
+  recordProviderSale(db,batch.id,12,{externalRef:'register-event-1',now:new Date('2026-11-01T12:01:00.000Z')});
+  assert.equal(getProviderBatches(db)[0].remainingQuantity,8);
+  assert.deepEqual(runProviderEveningCloseout(db,new Date('2026-11-01T17:59:00.000Z')),[]);
+  const published=runProviderEveningCloseout(db,new Date('2026-11-01T18:00:00.000Z'));
+  assert.equal(published.length,1);assert.equal(published[0].quantity,8);
+  const offer=getNearbyListings(db).find(item=>item.batchId===batch.id);
+  assert.equal(offer.quantity,8);assert.equal(offer.priceTry,1.75);assert.equal(offer.regularPriceTry,2.5);
+  const receipt=purchaseProviderOffer(db,batch.id,3,new Date('2026-11-01T18:01:00.000Z'));
+  assert.equal(receipt.totalTry,5.25);assert.equal(receipt.remainingQuantity,5);assert.equal(receipt.paymentTaken,false);
+  assert.equal(getProviderBatches(db)[0].remainingQuantity,5);db.close();
+});
+
+test('provider sales and evening release cannot oversell, and unknown handling facts block batch creation', () => {
+  const db=setup(),morning=new Date('2026-11-01T10:00:00.000Z'),facts={foodName:'Cookies',category:'bakery',openingQuantity:5,unit:'pieces',retailPriceTry:1,
+    discountPercent:20,pickupLocation:'Kadıköy',pickupDeadline:'2026-11-01T20:30:00.000Z',allergens:'Unknown',storage:'ambient',condition:'reported_intact',expiryType:'not_applicable',attested:true};
+  assert.throws(()=>createProviderBatch(db,facts,'donor',morning),/Confirm the morning quantity/);
+  facts.allergens='Wheat';const batch=createProviderBatch(db,facts,'donor',morning);
+  assert.throws(()=>recordProviderSale(db,batch.id,6),/Sale exceeds available stock/);
+  runProviderEveningCloseout(db,new Date('2026-11-01T18:00:00.000Z'));
+  assert.throws(()=>purchaseProviderOffer(db,batch.id,6),/Only 5 pieces remain/);db.close();
 });
