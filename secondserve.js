@@ -4,7 +4,7 @@ const savedSession = (() => { try { return JSON.parse(sessionStorage.getItem('se
 if(savedSession.role==='household'){sessionStorage.removeItem('secondserve.demo.session');savedSession.token='';savedSession.role='';}
 const savedProfile = (() => { try { return JSON.parse(localStorage.getItem('secondserve.food.profile') || 'null'); } catch { return null; } })();
 const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null, foodPhotoDataUrl:'',householdPhotoDataUrl:'',batchPhotoDataUrl:'',providerBatches:[],activeProviderBatch:null };
-const roleNames = { neighbor:'User', donor:'Provider', coordinator:'Admin', recipient:'Recipient partner' };
+const roleNames = { neighbor:'User', donor:'Provider', coordinator:'Owner', recipient:'Recipient partner' };
 const marketCategories = [
   { value:'Bakery',label:'Bakery & bread',icon:'♨' },{ value:'Produce',label:'Fruit & veg',icon:'✿' },
   { value:'Prepared meals',label:'Ready meals',icon:'▤' },{ value:'Dairy',label:'Dairy & chilled',icon:'◉' },
