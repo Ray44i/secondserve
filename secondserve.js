@@ -4,6 +4,11 @@ const savedSession = (() => { try { return JSON.parse(sessionStorage.getItem('se
 const savedProfile = (() => { try { return JSON.parse(localStorage.getItem('secondserve.food.profile') || 'null'); } catch { return null; } })();
 const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null, foodPhotoDataUrl:'' };
 const roleNames = { neighbor:'Food seeker', donor: 'Food business', coordinator: 'Rescue coordinator', recipient: 'Recipient partner' };
+const marketCategories = [
+  { value:'Bakery',label:'Bakery & bread',icon:'♨' },{ value:'Produce',label:'Fruit & veg',icon:'✿' },
+  { value:'Prepared meals',label:'Ready meals',icon:'▤' },{ value:'Dairy',label:'Dairy & chilled',icon:'◉' },
+  { value:'Pantry',label:'Pantry staples',icon:'▦' },{ value:'Drinks',label:'Drinks',icon:'◌' }
+];
 if(state.profile){state.userLocation=NEIGHBORHOODS[state.profile.neighborhood]?.lat?{lat:NEIGHBORHOODS[state.profile.neighborhood].lat,lon:NEIGHBORHOODS[state.profile.neighborhood].lon}:DEMO_CENTER;state.locationSource='profile';}
 $('marketRadius').value=String(state.radiusKm);
 const fmtNum = (n) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(Number(n || 0));
@@ -150,6 +155,7 @@ function visibleMarketListings(){
 function renderMarketplace(){
   const list=$('marketList'); if(!list)return;
   initMarketMap(); const items=visibleMarketListings(); list.replaceChildren(); state.marketMarkers.forEach(m=>m.remove());state.marketMarkers=[];
+  renderCategoryFilters();
   $('marketCount').textContent=`${items.length} demo ${items.length===1?'listing':'listings'}`;
   $('mapCaption').textContent=state.locationSource==='device'?'Approximate distance from your location · demo listings':state.profile?`Approximate distance from ${NEIGHBORHOODS[state.profile.neighborhood]?.label||'your area'} · demo listings`:'Illustrative demo locations · Kadıköy';
   $('profileSummary').textContent=state.profile?`${state.profile.name?`Recommendations for ${state.profile.name}`:'Your recommendations'} · ${NEIGHBORHOODS[state.profile.neighborhood]?.label||'Kadıköy'} · ${state.profile.householdSize} ${Number(state.profile.householdSize)===1?'person':'people'} · ${state.profile.offerPreference==='all'?'donations + discounts':state.profile.offerPreference==='donation'?'donations first':'discounts first'}`:'Create a profile to personalize nearby recommendations.';
@@ -159,7 +165,8 @@ function renderMarketplace(){
     const card=document.createElement('article');card.className='market-card';card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',`${item.name}, ${item.offerType==='donation'?'free donation':`${item.priceTry} Turkish lira`}, ${item.distanceKm.toFixed(1)} kilometers away`);
     const price=item.offerType==='donation'?'FREE':`${fmtNum(item.priceTry)} ₺`;
     const pickLabel=item.recommended?`<div class="recommendation-badge">✦ RECOMMENDED FOR YOU · ${safe(item.recommendationReason)}</div>`:'';
-    card.innerHTML=`<div>${pickLabel}<span class="market-type ${item.offerType==='discounted_sale'?'discount':''}">${item.offerType==='donation'?'FREE DONATION':'DISCOUNTED'}</span><h3>${safe(item.name)}</h3><div class="market-business">${safe(item.business)} · ${safe(item.category)}</div><p>${safe(item.note)}</p></div><div class="market-price">${price}<small>${item.offerType==='donation'?'NO COST':'DEMO PRICE'}</small></div><div class="market-card-foot"><span><b>${fmtNum(item.quantity)} ${safe(item.unit)}</b></span><span>${safe(item.location)}</span><span><b>${item.distanceKm.toFixed(1)} km</b> approx.</span><span>Pickup window ${Math.max(1,Math.round((Date.parse(item.pickupUntil)-Date.now())/60000))} min</span></div>`;
+    const category=marketCategories.find(value=>value.value===item.category);
+    card.innerHTML=`<div>${pickLabel}<div class="market-card-labels"><span class="category-pill"><i aria-hidden="true">${category?.icon||'•'}</i>${safe(category?.label||item.category)}</span><span class="market-type ${item.offerType==='discounted_sale'?'discount':''}">${item.offerType==='donation'?'FREE DONATION':'DISCOUNTED'}</span></div><h3>${safe(item.name)}</h3><div class="market-business">${safe(item.business)}</div><p>${safe(item.note)}</p></div><div class="market-price">${price}<small>${item.offerType==='donation'?'NO COST':'DEMO PRICE'}</small></div><div class="market-card-foot"><span><b>${fmtNum(item.quantity)} ${safe(item.unit)}</b></span><span>${safe(item.location)}</span><span><b>${item.distanceKm.toFixed(1)} km</b> approx.</span><span>Pickup window ${Math.max(1,Math.round((Date.parse(item.pickupUntil)-Date.now())/60000))} min</span></div>`;
     const focus=()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');const marker=state.marketMarkers[index];if(marker){state.marketMap?.setView(marker.getLatLng(),15,{animate:true});marker.openPopup();}};
     card.onclick=focus;card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();focus();}};list.append(card);
     if(state.marketMap){const icon=L.divIcon({className:'',html:`<div class="food-marker ${item.offerType==='discounted_sale'?'discount':''}">${index+1}</div>`,iconSize:[31,31],iconAnchor:[15,15]});const marker=L.marker([item.lat,item.lon],{icon}).addTo(state.marketMap);marker.bindPopup(`<b>${safe(item.name)}</b><br>${safe(item.business)}<br>${safe(item.location)}<br>${price} · ${item.offerType==='donation'?'donation':'discounted demo offer'}`);marker.on('click',()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');card.scrollIntoView({block:'nearest',behavior:'smooth'});});state.marketMarkers.push(marker);}
@@ -167,13 +174,24 @@ function renderMarketplace(){
   if(state.marketMap&&state.userLocation){if(!state.userMarker)state.userMarker=L.marker([state.userLocation.lat,state.userLocation.lon],{icon:L.divIcon({className:'',html:'<div class="food-marker user"></div>',iconSize:[17,17],iconAnchor:[8,8]})}).addTo(state.marketMap);else state.userMarker.setLatLng([state.userLocation.lat,state.userLocation.lon]);state.userMarker.bindPopup('Your location (kept in this tab).');}
   if(state.marketMap&&!state.userLocation&&items.length){const bounds=L.latLngBounds(items.map(i=>[i.lat,i.lon]));if(items.length>1)state.marketMap.fitBounds(bounds.pad(.18));}
 }
+function renderCategoryFilters(){
+  const host=$('marketCategoryFilters');if(!host)return;
+  const candidates=recommendFoodListings(state.listings,{origin:state.userLocation||DEMO_CENTER,profile:state.profile,offerFilter:state.offerFilter,categoryFilter:'all',radiusKm:state.radiusKm});
+  const counts=new Map(marketCategories.map(category=>[category.value,candidates.filter(item=>item.category===category.value).length]));
+  const categories=[{value:'all',label:'Everything',icon:'⌘',count:candidates.length},...marketCategories.filter(category=>state.listings.some(item=>item.category===category.value)).map(category=>({...category,count:counts.get(category.value)||0}))];
+  host.replaceChildren();
+  for(const category of categories){
+    const button=document.createElement('button');button.type='button';button.className=`category-tile${state.categoryFilter===category.value?' active':''}`;button.setAttribute('aria-pressed',String(state.categoryFilter===category.value));
+    button.innerHTML=`<i aria-hidden="true">${category.icon}</i><span>${safe(category.label)}</span><small>${category.count} ${category.count===1?'offer':'offers'}</small>`;
+    button.onclick=()=>{state.categoryFilter=category.value;renderMarketplace();};host.append(button);
+  }
+}
 async function loadMarketplace(){
   try{const result=await request('/api/secondserve/nearby',{auth:false});state.listings=result.listings||[];renderMarketplace();if(!window.L)$('mapCaption').textContent='Map library unavailable · browse the nearby list below.';}
   catch(error){$('marketList').innerHTML=`<div class="empty-state">Could not load listings: ${safe(error.message)}</div>`;}
 }
 document.querySelectorAll('.sidebar nav a[data-view]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();setView(link.dataset.view);if(link.dataset.view==='operations'&&link.hash)document.querySelector(link.hash)?.scrollIntoView({behavior:'smooth'});}));
 document.querySelectorAll('[data-offer-filter]').forEach(button=>button.addEventListener('click',()=>{state.offerFilter=button.dataset.offerFilter;document.querySelectorAll('[data-offer-filter]').forEach(item=>item.classList.toggle('active',item===button));renderMarketplace();}));
-$('marketCategory').onchange=event=>{state.categoryFilter=event.target.value;renderMarketplace();};
 $('marketRadius').onchange=event=>{state.radiusKm=Number(event.target.value);renderMarketplace();};
 $('editProfile').onclick=()=>{
   const profile=state.profile||{};$('profileName').value=profile.name||'';$('profileAddress').value=profile.addressNote||'';$('profileNeighborhood').value=profile.neighborhood||'kadikoy';$('profileHousehold').value=String(profile.householdSize||1);$('profileOffer').value=profile.offerPreference||'all';$('profileRadius').value=String(profile.radiusKm||10);
