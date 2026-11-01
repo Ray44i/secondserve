@@ -159,7 +159,9 @@ function renderMarketplace(){
   initMarketMap(); const items=visibleMarketListings(); list.replaceChildren(); state.marketMarkers.forEach(m=>m.remove());state.marketMarkers=[];
   renderCategoryFilters();
   $('marketCount').textContent=`${items.length} demo ${items.length===1?'listing':'listings'}`;
+  $('mapLiveCount').innerHTML=`<i></i> ${items.length} ${items.length===1?'SPOT':'SPOTS'}`;
   $('mapCaption').textContent=state.locationSource==='device'?'Approximate distance from your location · demo listings':state.profile?`Approximate distance from ${NEIGHBORHOODS[state.profile.neighborhood]?.label||'your area'} · demo listings`:'Illustrative demo locations · Kadıköy';
+  $('mapAreaLabel').textContent=state.locationSource==='device'?'YOUR AREA · APPROXIMATE':state.profile?`${NEIGHBORHOODS[state.profile.neighborhood]?.label||'YOUR AREA'} · DEMO`:'KADIKÖY · DEMO AREA';
   $('profileSummary').textContent=state.profile?`${state.profile.name?`Recommendations for ${state.profile.name}`:'Your recommendations'} · ${NEIGHBORHOODS[state.profile.neighborhood]?.label||'Kadıköy'} · ${state.profile.householdSize} ${Number(state.profile.householdSize)===1?'person':'people'} · ${state.profile.offerPreference==='all'?'donations + discounts':state.profile.offerPreference==='donation'?'donations first':'discounts first'}`:'Create a profile to personalize nearby recommendations.';
   $('editProfile').textContent=state.profile?'✎ Edit your profile':'＋ Create your profile';
   if(!items.length)list.innerHTML='<div class="empty-state">No demo listings match these filters within this radius. Try a wider search or change the category.</div>';
@@ -177,10 +179,17 @@ function renderMarketplace(){
     }
     const focus=()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');const marker=state.marketMarkers[index];if(marker){state.marketMap?.setView(marker.getLatLng(),15,{animate:true});marker.openPopup();}};
     card.onclick=focus;card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();focus();}};list.append(card);
-    if(state.marketMap){const icon=L.divIcon({className:'',html:`<div class="food-marker ${item.offerType==='discounted_sale'?'discount':''}">${index+1}</div>`,iconSize:[31,31],iconAnchor:[15,15]});const marker=L.marker([item.lat,item.lon],{icon}).addTo(state.marketMap);marker.bindPopup(`<b>${safe(item.name)}</b><br>${safe(item.business)}<br>${safe(item.location)}<br>${price} · ${item.offerType==='donation'?'donation':'discounted demo offer'}`);marker.on('click',()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');card.scrollIntoView({block:'nearest',behavior:'smooth'});});state.marketMarkers.push(marker);}
+    if(state.marketMap){const shortPrice=item.offerType==='donation'?'FREE':`${fmtNum(item.priceTry)} ₺`;const icon=L.divIcon({className:'',html:`<div class="map-price-pin ${item.offerType==='discounted_sale'?'discount':''}"><b>${safe(shortPrice)}</b><small>${index+1}</small></div>`,iconSize:[78,45],iconAnchor:[39,44]});const marker=L.marker([item.lat,item.lon],{icon}).addTo(state.marketMap);marker.bindPopup(`<div class="map-popup"><small>${item.offerType==='donation'?'COMMUNITY DONATION':'EVENING FOOD DEAL'}</small><b>${safe(item.name)}</b><span>${safe(item.business)} · ${safe(item.location)}</span><strong>${price}${item.regularPriceTry?` <del>${fmtNum(item.regularPriceTry)} ₺</del>`:''}</strong><span>${fmtNum(item.quantity)} ${safe(item.unit)} · ${item.distanceKm.toFixed(1)} km away</span></div>`,{className:'food-map-popup',closeButton:false});marker.on('click',()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');card.scrollIntoView({block:'nearest',behavior:'smooth'});});state.marketMarkers.push(marker);}
   }
   if(state.marketMap&&state.userLocation){if(!state.userMarker)state.userMarker=L.marker([state.userLocation.lat,state.userLocation.lon],{icon:L.divIcon({className:'',html:'<div class="food-marker user"></div>',iconSize:[17,17],iconAnchor:[8,8]})}).addTo(state.marketMap);else state.userMarker.setLatLng([state.userLocation.lat,state.userLocation.lon]);state.userMarker.bindPopup('Your location (kept in this tab).');}
   if(state.marketMap&&!state.userLocation&&items.length){const bounds=L.latLngBounds(items.map(i=>[i.lat,i.lon]));if(items.length>1)state.marketMap.fitBounds(bounds.pad(.18));}
+}
+function fitMarketPins(){
+  if(!state.marketMap)return;
+  const points=state.marketMarkers.map(marker=>marker.getLatLng());
+  if(state.userLocation)points.push([state.userLocation.lat,state.userLocation.lon]);
+  if(points.length>1)state.marketMap.fitBounds(L.latLngBounds(points).pad(.22),{animate:true,maxZoom:15});
+  else if(state.userLocation)state.marketMap.setView([state.userLocation.lat,state.userLocation.lon],14,{animate:true});
 }
 async function loadProviderBatches(){
   if(state.role!=='donor'||!state.token)return;
@@ -214,6 +223,7 @@ async function loadMarketplace(){
 document.querySelectorAll('.sidebar nav a[data-view]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();setView(link.dataset.view);if(link.dataset.view==='operations'&&link.hash)document.querySelector(link.hash)?.scrollIntoView({behavior:'smooth'});}));
 document.querySelectorAll('[data-offer-filter]').forEach(button=>button.addEventListener('click',()=>{state.offerFilter=button.dataset.offerFilter;document.querySelectorAll('[data-offer-filter]').forEach(item=>item.classList.toggle('active',item===button));renderMarketplace();}));
 $('marketRadius').onchange=event=>{state.radiusKm=Number(event.target.value);renderMarketplace();};
+$('mapShowAll').onclick=fitMarketPins;
 $('editProfile').onclick=()=>{
   const profile=state.profile||{};$('profileName').value=profile.name||'';$('profileAddress').value=profile.addressNote||'';$('profileNeighborhood').value=profile.neighborhood||'kadikoy';$('profileHousehold').value=String(profile.householdSize||1);$('profileOffer').value=profile.offerPreference||'all';$('profileRadius').value=String(profile.radiusKm||10);
   document.querySelectorAll('input[name="profileCategory"]').forEach(box=>{box.checked=profile.categories?.includes(box.value)||false;});$('profileDialog').showModal();
