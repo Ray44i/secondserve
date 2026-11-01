@@ -15,14 +15,14 @@ The live submission slide supplied for this event lists four requirements:
 
 1. Use Node.js 22.9 or newer.
 2. Run `npm install` once if dependencies are missing.
-3. Start with `npm start`. The default address is `http://127.0.0.1:4173`. If that port is occupied in PowerShell, use `$env:PORT='4175'; npm start` and open `http://127.0.0.1:4175`.
+3. Start with `npm start`. The default address is `http://127.0.0.1:4173`. If that port is occupied in PowerShell, use `$env:PORT='4176'; npm start` and open `http://127.0.0.1:4176`.
 4. The Meta Model API needs a local `.env` with `MODEL_API_KEY` and `SECONDSERVE_MODEL_ENABLED=true`. Keep the key private; never show `.env` in the recording.
 
 ## Final verification
 
-- Run `npm test` from the project directory; the current suite passes 16 tests.
-- Start the exact version to be recorded and run the cancellation-recovery story in `DEMO_SCRIPT.md` once without recording.
-- If showing Muse Spark, check that **Muse Spark · opt-in tools** appears. Rehearse the coordinator brief. For photo analysis, use a non-personal food image and show both explicit consent and the result. Every model request may consume credits.
+- Run `npm test` from the project directory on the final commit and resolve failures; do not rely on a previous test count.
+- Start the exact version to be recorded and rehearse the provider → nearby storefront → basket → demo checkout story in `DEMO_SCRIPT.md` once without recording.
+- The current local status endpoint reports Muse Spark enabled. This does not prove a successful photo call. If showing photo analysis, use a non-personal food image and show explicit consent plus the real result. Each model request may consume credits.
 - Do not present generated drafts as verified facts or simulated offers as live inventory.
 - Ensure the public repo has the final pushed commit and that `.env`, local databases, keys, and personal data are absent.
 - Record exactly 3 minutes; review playback, sound, readable UI, and the final frame.

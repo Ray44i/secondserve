@@ -1,57 +1,52 @@
-# SecondServe · three-minute demo script
+# SecondServe · three-minute hackathon demo
 
-## Reset before recording
+## Before recording
 
-- Start the app and check that the Meta Model API status says **Muse Spark · opt-in tools**.
-- Use only the fictional demo network. Reset to **Autonomous recovery · cancellation**.
-- Rehearse the role switches: Coordinator → Charity A → Coordinator → Community Kitchen B → Coordinator.
-- The coordinator brief was verified against Muse Spark. The photo feature is optional; include it only if you can show the consent checkbox and a successful result in rehearsal.
-- Record one continuous, readable browser capture with the cursor visible. Keep the limitations banner/readable labels in frame. Do not show API keys, `.env`, billing, or personal account details.
+- Start the local server and confirm the header reports **Muse Spark · opt-in tools**. Do not show `.env`, API keys, billing, or personal account details.
+- Use the existing sample cookie batch for checkout, or create a clearly labeled demo batch. Do not reset or delete local data just to prepare the video.
+- For the photo segment, use a non-personal food image. Check the consent box only when you are ready to send it to Meta; the request may consume credits. Skip the segment if the request fails or the result is unclear.
+- Rehearse role switching and confirm that the public repository is current. All offers, providers, quantities, locations, POS events, and orders shown here are demo data.
 
-## Timed narration and screen actions
+## Timed script
 
-### 0:00–0:20 · The problem
+### 0:00–0:15 · The problem
 
-**Say:** “Surplus food expires on a clock. Finding a possible recipient is not enough: the pickup has to happen. SecondServe helps a coordinator route a batch, recover when a partner cancels, and count impact only after a verified handoff.”
+**Say:** “Good food gets wasted when businesses cannot quickly account for what sold and route the rest to nearby people. SecondServe turns a daily leftover batch into a clear, reviewable pickup offer.”
 
-**Show:** the product title and simulated-network disclaimer.
+**Show:** the SecondServe landing page and its local-demo disclosure.
 
-### 0:20–0:40 · People can find offers
+### 0:15–0:55 · Provider + Meta AI
 
-**Say:** “For neighbors, the nearby board separates free donations from discounts and groups offers into useful food categories. Area, category, offer type, and radius shape what appears.”
+**Show:** enter as Provider, select a cookie photo, check consent, and click **Identify product & estimate count**. Pause on the actual Muse Spark result.
 
-**Show:** nearby category cards and counts, then one listing and its map pin. Say that the inventory and locations are fictional demo data.
+**Say:** “Muse Spark suggests the food and estimates only visible units. The provider checks the estimate and confirms the real batch; the model cannot see hidden stock or verify allergens, dates, or safety.”
 
-### 0:40–1:00 · Meta AI assists without deciding
+**Show:** correct the product/count if needed; enter price, discount, pickup deadline, and provider-confirmed facts; attest and start the batch. Do not claim the AI verified any field.
 
-**Say:** “Muse Spark turns a donor note into a structured draft. The coordinator can also ask it to summarize the deterministic match results and suggest questions to check. These are advisory outputs; they never certify safety or dispatch an offer.”
+### 0:55–1:20 · Track what remains
 
-**Show:** one successful Muse Spark coordinator brief on the recovery scenario. Point out the eligible options and the advisory-only label. This explicit request may use hackathon credits.
+**Show:** record a simulated POS sale, point to opening quantity, sale, and remaining quantity, then click **Publish remaining stock now**.
 
-### 1:00–1:25 · Rules gate the route
+**Say:** “Inventory uses explicit arithmetic: opening stock minus recorded sales and customer orders. The closeout offer publishes only the confirmed remainder at the provider’s selected discount.”
 
-**Say:** “The rules engine has the authority here: it checks required facts and hard recipient constraints before it ranks eligible matches. A high score cannot override an exclusion.”
+### 1:20–2:15 · Find a nearby offer
 
-**Show:** run deterministic matching; point to the eligible ranking and one exclusion reason. Then approve the first offer.
+**Show:** switch to User, open the nearby map, click the cookie pin, and show the provider storefront, pickup location, approximate distance, pickup deadline, and active offers. Add the cookies to the basket.
 
-### 1:25–2:00 · Recover when Plan A fails
+**Say:** “People can inspect the provider’s nearby offers before choosing. The map and business records are sample data, and the distance is approximate.”
 
-**Say:** “The first partner accepts, then cancels. SecondServe releases the reservation, excludes that partner from this attempt, recalculates, and routes the replacement to the next eligible recipient.”
+### 2:15–2:50 · Review checkout
 
-**Show:** switch to Charity A, accept and cancel; return to Coordinator and show the recovery event and replacement offer to Community Kitchen B.
+**Show:** basket and payment review: quantity, regular price, savings, pickup fee, distance, and cutoff. Select a demo payment option and place the demo order only if the sample stock is ready to change.
 
-### 2:00–2:35 · Verify the outcome
+**Say:** “Checkout shows the pickup details and savings. This prototype does not process payment; completing the demo order only updates sample inventory.”
 
-**Say:** “A recipient report is not counted as impact. The partner reports the pickup quantity, then a coordinator verifies it. Only the verified quantity enters the ledger, grouped by unit.”
+### 2:50–3:00 · Close
 
-**Show:** switch to Community Kitchen B, accept and report pickup; switch to Coordinator, verify the quantity, and show the verified-impact metric change.
+**Say:** “SecondServe makes surplus easier to account for and discover while keeping people responsible for food facts and pickup. The public repository contains the prototype; none of these demo offers are live.”
 
-### 2:35–3:00 · Close with the boundary
+**Show:** the project name and repository URL.
 
-**Say:** “SecondServe is a coordination prototype, not a live rescue network. The demo partners and offers are simulated. The design keeps safety facts with accountable people and makes the path from surplus to verified handoff visible.”
+## Backup if photo analysis is unreliable
 
-**Show:** verified outcome and the simulated-network note. End on the project name and public repository URL.
-
-## Optional image-understanding insert
-
-Replace the 0:40–1:00 segment only if the photo flow has been rehearsed successfully. Choose a non-personal food image, show the consent checkbox, click **Analyze photo with Muse Spark**, then state that the model suggested visible food identity only. Explicitly say quantity, ingredients, allergens, freshness, handling, and safety remain unverified. The click sends the resized image to Meta and may use credits.
+Skip the model call rather than showing a spinner or failed request. Explain that photo suggestions are an opt-in feature and continue with a prefilled demo batch. Do not label a typed or seeded result as live AI output.

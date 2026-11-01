@@ -16,20 +16,19 @@ Open <http://127.0.0.1:4173>. The SQLite demo database is created under ignored 
 
 ## Demo workflow
 
-1. Choose **User** to browse free donations and discounted food. Create a profile to rank nearby offers, or click **Donate leftover food** to post a free household donation from the same dashboard.
-2. Open the **Owner workspace** and load the recovery scenario.
-3. Run the decision agent and review its hard constraints, candidate ranking, and exclusions.
-4. Dispatch the first offer. Open the secondary **Recipient partner demo view**, choose Charity A, accept, then cancel it.
-5. Switch back to the **Owner workspace**: the reservation is released and the recovery agent routes a replacement offer to Community Kitchen B.
-6. Accept the replacement, report a pickup as the recipient, and verify a quantity as the owner. Only that verified quantity enters the impact ledger.
-7. Try the review scenario to see incomplete handling facts blocked from automatic matching.
+1. Choose **Provider** and create a morning batch. If demonstrating Meta AI, select a food photo, review the consent text, check consent, and explicitly click **Identify product & estimate count**. Review or correct the draft; AI does not verify the full batch or food-safety facts.
+2. Enter price, discount, pickup deadline, handling/date/allergen facts, confirm the provider attestation, and start the batch.
+3. Record a simulated POS sale. The provider ledger shows remaining units. Use **Publish remaining stock now** for a live demo, or let the local scheduler publish at the chosen closeout time.
+4. Switch to **User**. Click a listing or map pin to view the provider storefront and its active offers, then add a product to the basket.
+5. Review approximate distance, pickup deadline, savings, and the demo payment status. Completing checkout creates a simulated reservation and updates sample inventory; it does not take payment or guarantee a real pickup.
+6. For the separate rescue-coordination story, open the **Owner workspace**, load the recovery scenario, run matching, then show acceptance, cancellation, rerouting, and pickup verification. Only verified quantities enter that impact ledger.
 
 ## Provider closeout loop
 
 1. Choose **Provider** and enter a morning batch. A resized photo can optionally ask Muse Spark to suggest the product/category and estimate countable units visible in-frame; it prefills the quantity and unit when confidence is medium or high. Confirm that the photo shows the complete morning batch. The visual estimate cannot include hidden/off-frame stock or verify safety. Add the price, pickup deadline, and provider-confirmed handling/date/allergen facts.
 2. In the prototype, use **Record sale event** to simulate a POS sale. A real POS connector would send these idempotent sale events automatically; no register vendor is connected here.
 3. The local server runs the 21:00 Istanbul closeout. It reconciles opening stock minus POS sales, then adds the remaining eligible quantity to the nearby discounted offers. Restarting the server also runs any missed closeout.
-4. Choose **User** to see the offer. **Buy for pickup · demo** reduces the same inventory count; it does not take payment or create a real booking.
+4. Choose **User** to see the offer. Open its storefront, add it to the basket, and continue through the clearly labeled demo checkout. Completing the order reduces the same inventory count; it does not take payment or create a real booking.
 
 The scheduler uses deterministic stock math; Muse Spark is not asked to infer sales or inventory. Unknown allergens, unconfirmed handling, expired pickup windows, or missing provider attestation prevent the batch from being listed automatically.
 

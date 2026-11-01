@@ -1,7 +1,7 @@
 # SecondServe — submission description
 
-SecondServe is an AI-assisted surplus-food rescue coordinator with a nearby food board. Neighbors can browse donation and discounted-food listings on a map; businesses report time-sensitive batches; a cautious decision agent checks the facts and recipient constraints, and eligible partners are ranked for a simulated offer. When a recipient cancels, the system releases reserved capacity and finds a replacement. A pickup is counted as rescued only after a coordinator verifies the actual quantity.
+SecondServe is an AI-assisted surplus-food rescue prototype. A provider can use an opt-in Muse Spark photo analysis to draft the visible food identity and countable units, review the result, record sales, and publish remaining stock. A nearby user can inspect the provider storefront, compare active offers, review pickup distance and deadline, and place a simulated pickup order. Checkout does not process payments.
 
-Muse Spark can turn a business's plain-language note into an editable structured intake draft. It does not certify freshness or infer missing safety information. Incomplete listings stop for human review.
+Muse Spark can also turn a business's plain-language note into an editable intake draft and explain deterministic recipient-match results for coordinator review. It cannot certify freshness or infer missing safety information. A separate rescue-coordination workflow checks recipient constraints, recovers from cancellations, and counts food only after a coordinator verifies a pickup quantity.
 
 The prototype uses fictional organizations, capacity, availability, and locations; distances and offer delivery are simulated. It is a local demo, not a deployed food-safety or logistics service. Verified food quantities remain grouped by unit, and no environmental benefit is claimed without a validated baseline.

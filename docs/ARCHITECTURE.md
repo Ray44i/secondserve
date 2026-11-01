@@ -10,7 +10,9 @@ Organizations and recipient profiles are seeded fictional fixtures. Listings hav
 
 ## Model boundary
 
-Muse Spark is called only by an explicit intake action when configured. The user-authored note is treated as untrusted data; the API requests constrained structured output and the server validates enumerations and lengths. It creates a draft only; it cannot create a listing or send an offer. Human review is mandatory. No image is sent or analyzed.
+Muse Spark is called only after an explicit user action when configured. Text and food-photo outputs are advisory drafts; the user must review and confirm every business fact. Photo analysis can suggest visible food identity and countable units, but cannot see hidden stock or verify ingredients, allergens, freshness, handling, or safety. A coordinator brief may explain deterministic match results but cannot change eligibility or dispatch an offer. Each model request may consume credits.
+
+Provider batches reconcile opening stock minus recorded POS sales and customer purchases. The local closeout scheduler publishes eligible leftovers; the provider can also publish remaining stock immediately for the demo. Customers can open a provider storefront, add an offer to a browser-memory basket, and complete a simulated checkout. The purchase mutation reduces sample inventory, but no payment is processed and no pickup is guaranteed.
 
 ## Authentication and deployment boundary
 
