@@ -180,11 +180,11 @@ function renderMarketplace(){
       const buy=document.createElement('div');buy.className='quick-buy';const quantity=document.createElement('input');quantity.type='number';quantity.min='1';quantity.step='1';quantity.max=String(item.quantity);quantity.value='1';quantity.setAttribute('aria-label',`Quantity of ${item.name} to buy for pickup`);
       const action=document.createElement('button');action.className='button primary';action.type='button';action.textContent='Add to basket';action.title='Add this offer to your basket; no order is placed yet.';
       action.onclick=event=>{event.stopPropagation();addToBasket(item,Number(quantity.value));};
-      const caveat=document.createElement('small');caveat.textContent='Review basket before demo checkout';buy.append(quantity,action,caveat);card.append(buy);
+      const caveat=document.createElement('small');caveat.textContent='Review basket before demo checkout';buy.onclick=event=>event.stopPropagation();buy.append(quantity,action,caveat);card.append(buy);
     }
-    const focus=()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');const marker=state.marketMarkers[index];if(marker){state.marketMap?.setView(marker.getLatLng(),15,{animate:true});marker.openPopup();}};
-    card.onclick=focus;card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();focus();}};list.append(card);
-    if(state.marketMap){const shortPrice=item.offerType==='donation'?'FREE':`${fmtNum(item.priceTry)} ₺`;const icon=L.divIcon({className:'',html:`<div class="map-price-pin ${item.offerType==='discounted_sale'?'discount':''}"><b>${safe(shortPrice)}</b><small>${index+1}</small></div>`,iconSize:[78,45],iconAnchor:[39,44]});const marker=L.marker([item.lat,item.lon],{icon}).addTo(state.marketMap);marker.bindPopup(`<div class="map-popup"><small>${item.offerType==='donation'?'COMMUNITY DONATION':'EVENING FOOD DEAL'}</small><b>${safe(item.name)}</b><span>${safe(item.business)} · ${safe(item.location)}</span><strong>${price}${item.regularPriceTry?` <del>${fmtNum(item.regularPriceTry)} ₺</del>`:''}</strong><span>${fmtNum(item.quantity)} ${safe(item.unit)} · ${item.distanceKm.toFixed(1)} km away</span></div>`,{className:'food-map-popup',closeButton:false});marker.on('click',()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');card.scrollIntoView({block:'nearest',behavior:'smooth'});});state.marketMarkers.push(marker);}
+    const showStore=()=>openStorefront(item);
+    card.onclick=showStore;card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();showStore();}};list.append(card);
+    if(state.marketMap){const shortPrice=item.offerType==='donation'?'FREE':`${fmtNum(item.priceTry)} ₺`;const icon=L.divIcon({className:'',html:`<div class="map-price-pin ${item.offerType==='discounted_sale'?'discount':''}"><b>${safe(shortPrice)}</b><small>${index+1}</small></div>`,iconSize:[78,45],iconAnchor:[39,44]});const marker=L.marker([item.lat,item.lon],{icon}).addTo(state.marketMap);marker.on('click',()=>openStorefront(item));state.marketMarkers.push(marker);}
   }
   updateBasketBadge();
   if(state.marketMap&&state.userLocation){if(!state.userMarker)state.userMarker=L.marker([state.userLocation.lat,state.userLocation.lon],{icon:L.divIcon({className:'',html:'<div class="food-marker user"></div>',iconSize:[17,17],iconAnchor:[8,8]})}).addTo(state.marketMap);else state.userMarker.setLatLng([state.userLocation.lat,state.userLocation.lon]);state.userMarker.bindPopup('Your location (kept in this tab).');}
@@ -195,8 +195,25 @@ function addToBasket(item,quantity){
   if(!Number.isInteger(amount)||amount<1||amount>available){toast(`Choose 1–${fmtNum(available)} ${item.unit}.`);return;}
   const existing=state.cart.find(row=>row.batchId===item.batchId);
   if(existing){if(existing.quantity+amount>available){toast(`Only ${fmtNum(available-existing.quantity)} more ${item.unit} can be added.`);return;}existing.quantity+=amount;}
-  else state.cart.push({id:item.id,batchId:item.batchId,name:item.name,business:item.business,unit:item.unit,quantity:amount,stock:available,priceTry:Number(item.priceTry),regularPriceTry:Number(item.regularPriceTry||0),location:item.location,pickupUntil:item.pickupUntil});
+  else state.cart.push({id:item.id,batchId:item.batchId,name:item.name,business:item.business,unit:item.unit,quantity:amount,stock:available,priceTry:Number(item.priceTry),regularPriceTry:Number(item.regularPriceTry||item.priceTry||0),location:item.location,pickupUntil:item.pickupUntil,distanceKm:Number(item.distanceKm||0)});
   updateBasketBadge();renderBasket();toast(`${amount} ${item.unit} added to your basket.`);
+}
+function openStorefront(item){
+  const offers=state.listings.filter(listing=>listing.business===item.business).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const isCommunity=item.business==='Community donor';
+  $('storeKicker').textContent=isCommunity?'COMMUNITY DONOR · LOCAL DEMO':'PROVIDER PROFILE · LOCAL DEMO';
+  $('storeTitle').textContent=item.business;
+  $('storeSubtitle').textContent=isCommunity?'Community listings shared near this pickup area.':'Nearby surplus from this provider, with pickup details for each offer.';
+  $('storeFacts').innerHTML=`<div><small>SELECTED LOCATION</small><b>${safe(item.location)}</b></div><div><small>APPROX. DISTANCE</small><b>${Number(item.distanceKm||0).toFixed(1)} km</b></div><div><small>ACTIVE OFFERS</small><b>${offers.length}</b></div><div><small>NETWORK STATUS</small><b>Demo listing</b></div>`;
+  $('storeOfferCount').textContent=`${offers.length} ${offers.length===1?'offer':'offers'}`;
+  const host=$('storeOffers');host.replaceChildren();
+  if(!offers.length)host.innerHTML='<div class="basket-empty"><b>No active offers</b><span>This provider has no other offers on the nearby board right now.</span></div>';
+  for(const offer of offers){
+    const row=document.createElement('article');row.className='store-offer';const price=offer.offerType==='donation'?'FREE':`₺${fmtNum(offer.priceTry)}`;
+    row.innerHTML=`<div><div class="store-offer-tags"><span>${offer.offerType==='donation'?'FREE DONATION':offer.discountPercent?`${safe(offer.discountPercent)}% OFF`:'DISCOUNTED'}</span><small>${safe(offer.location)} · ${Number(offer.distanceKm||0).toFixed(1)} km</small></div><b>${safe(offer.name)}</b><small>${fmtNum(offer.quantity)} ${safe(offer.unit)} left · pickup by ${when(offer.pickupUntil)}</small></div><div class="store-offer-price"><b>${price}</b>${offer.regularPriceTry?`<small>was ₺${fmtNum(offer.regularPriceTry)}</small>`:''}${offer.purchaseable&&state.role==='neighbor'?'<button type="button" class="button secondary store-add">Add</button>':''}</div>`;
+    const add=row.querySelector('.store-add');if(add)add.onclick=()=>addToBasket(offer,1);host.append(row);
+  }
+  $('storeDialog').showModal();
 }
 function updateBasketBadge(){const count=state.cart.reduce((sum,item)=>sum+item.quantity,0);const badge=$('basketCount');if(badge)badge.textContent=String(count);const button=$('openBasket');if(button)button.setAttribute('aria-label',`Open basket, ${count} items`);}
 function cartTotal(){return Math.round(state.cart.reduce((sum,item)=>sum+item.quantity*item.priceTry,0)*100)/100;}
@@ -205,7 +222,7 @@ function renderBasket(){
   if(!state.cart.length){host.innerHTML='<div class="basket-empty"><b>Your basket is empty</b><span>Choose a discounted nearby offer and add it here to review it before checkout.</span></div>';}
   for(const [index,item] of state.cart.entries()){
     const row=document.createElement('article');row.className='basket-row';
-    row.innerHTML=`<div class="basket-row-main"><div><b>${safe(item.name)}</b><small>${safe(item.business)} · ${safe(item.location)} · pickup by ${when(item.pickupUntil)}</small>${item.unavailable?'<small class="basket-unavailable">This offer is no longer available.</small>':''}</div><button type="button" class="basket-remove" aria-label="Remove ${safe(item.name)} from basket">Remove</button></div><div class="basket-row-bottom"><label>QUANTITY<input type="number" min="1" max="${Math.max(1,item.stock)}" step="1" value="${item.quantity}" aria-label="Quantity of ${safe(item.name)}" ${item.unavailable?'disabled':''}></label><span>${fmtNum(item.priceTry)} ₺ each</span><b>${(item.quantity*item.priceTry).toFixed(2)} ₺</b></div>`;
+    row.innerHTML=`<div class="basket-row-main"><div><b>${safe(item.name)}</b><small>${safe(item.business)} · ${safe(item.location)} · about ${Number(item.distanceKm||0).toFixed(1)} km · pickup by ${when(item.pickupUntil)}</small>${item.unavailable?'<small class="basket-unavailable">This offer is no longer available.</small>':''}</div><button type="button" class="basket-remove" aria-label="Remove ${safe(item.name)} from basket">Remove</button></div><div class="basket-row-bottom"><label>QUANTITY<input type="number" min="1" max="${Math.max(1,item.stock)}" step="1" value="${item.quantity}" aria-label="Quantity of ${safe(item.name)}" ${item.unavailable?'disabled':''}></label><span>${fmtNum(item.priceTry)} ₺ each</span><b>${(item.quantity*item.priceTry).toFixed(2)} ₺</b></div>`;
     row.querySelector('input').onchange=event=>{const amount=Number(event.target.value);if(!Number.isInteger(amount)||amount<1||amount>item.stock){event.target.value=String(item.quantity);toast(`Choose 1–${fmtNum(item.stock)} ${item.unit}.`);return;}item.quantity=amount;renderBasket();updateBasketBadge();};
     row.querySelector('.basket-remove').onclick=()=>{state.cart.splice(index,1);renderBasket();updateBasketBadge();};host.append(row);
   }
@@ -214,7 +231,9 @@ function renderBasket(){
 function showCheckoutStage(stage){$('basketStage').hidden=stage!=='basket';$('paymentStage').hidden=stage!=='payment';$('receiptStage').hidden=stage!=='receipt';$('basketTitle').textContent=stage==='basket'?'Your basket':stage==='payment'?'Demo checkout':'Order confirmed';$('checkoutKicker').textContent=stage==='basket'?'USER · YOUR BASKET':stage==='payment'?'USER · DEMO PAYMENT':'USER · DEMO RECEIPT';$('checkoutSubtitle').textContent=stage==='basket'?'Review quantities before continuing to demo checkout.':stage==='payment'?'Choose a demo method and review the amount before placing this simulated order.':'Your demo order was recorded locally.';}
 function renderPaymentSummary(){
   const host=$('paymentSummary');host.replaceChildren();
-  for(const item of state.cart){const row=document.createElement('div');row.className='payment-summary-row';row.innerHTML=`<span>${safe(item.name)} <small>× ${item.quantity} ${safe(item.unit)}</small></span><b>₺${(item.quantity*item.priceTry).toFixed(2)}</b>`;host.append(row);}
+  for(const item of state.cart){const row=document.createElement('div');row.className='payment-summary-row';row.innerHTML=`<span><b>${safe(item.name)} × ${item.quantity} ${safe(item.unit)}</b><small>${safe(item.business)} · ${safe(item.location)} · about ${Number(item.distanceKm||0).toFixed(1)} km away</small><small>Pickup by ${when(item.pickupUntil)}</small></span><b>₺${(item.quantity*item.priceTry).toFixed(2)}</b>`;host.append(row);}
+  const regular=state.cart.reduce((sum,item)=>sum+item.quantity*item.regularPriceTry,0),saved=Math.max(0,regular-cartTotal());
+  const details=document.createElement('div');details.className='payment-breakdown';details.innerHTML=`<div><span>Regular price</span><b>₺${regular.toFixed(2)}</b></div><div class="saved"><span>You save</span><b>−₺${saved.toFixed(2)}</b></div><div><span>Pickup fee</span><b>₺0.00</b></div>`;host.append(details);
   const total=document.createElement('div');total.className='payment-summary-total';total.innerHTML=`<span>Total due in demo</span><b>₺${cartTotal().toFixed(2)}</b>`;host.append(total);
 }
 async function completeDemoOrder(){
@@ -273,6 +292,8 @@ $('backToWelcome').onclick=()=>{ $('loginScreen').hidden=true; $('welcomeScreen'
 document.querySelectorAll('[data-offer-filter]').forEach(button=>button.addEventListener('click',()=>{state.offerFilter=button.dataset.offerFilter;document.querySelectorAll('[data-offer-filter]').forEach(item=>item.classList.toggle('active',item===button));renderMarketplace();}));
 $('marketRadius').onchange=event=>{state.radiusKm=Number(event.target.value);renderMarketplace();};
 $('openBasket').onclick=()=>{renderBasket();showCheckoutStage('basket');$('basketDialog').showModal();};
+$('closeStore').onclick=$('storeDone').onclick=()=>$('storeDialog').close();
+$('storeDialog').addEventListener('click',event=>{if(event.target===$('storeDialog'))$('storeDialog').close();});
 $('closeBasket').onclick=()=>$('basketDialog').close();
 $('continueShopping').onclick=()=>$('basketDialog').close();
 $('toPayment').onclick=()=>{if(!state.cart.length)return;renderPaymentSummary();showCheckoutStage('payment');};
