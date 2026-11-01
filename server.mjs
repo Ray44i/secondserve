@@ -413,11 +413,11 @@ async function secondServeRoute(request, response, url) {
   const path = url.pathname, method = request.method;
   try {
     if (method === 'GET' && path === '/api/secondserve/status') return sendJson(response, 200, { modelEnabled: secondServeModelEnabled, model: process.env.MODEL_API_MODEL || 'muse-spark-1.3', persistence: 'sqlite', simulatedNetwork: true });
-    if (method === 'GET' && path === '/api/secondserve/nearby') return sendJson(response, 200, { listings: getNearbyListings(secondServeDb), demo: true, source: 'fictional-seed-data', reservationEnabled: false });
+    if (method === 'GET' && path === '/api/secondserve/nearby') return sendJson(response, 200, { listings: getNearbyListings(secondServeDb), demo: true, source: 'local-household-posts-and-simulated-fixtures', reservationEnabled: false });
     if (method === 'GET' && path === '/api/secondserve/state') return sendJson(response, 200, getSecondServeState(secondServeDb));
     if (method === 'POST' && path === '/api/secondserve/session') {
-      const body = await readJson(request, 2048), roles = ['neighbor','donor','household','coordinator','recipient'];
-      if (!roles.includes(body.role)) return sendJson(response, 400, { error: 'Select food seeker, household donor, food business, coordinator, or recipient demo access.' });
+      const body = await readJson(request, 2048), roles = ['neighbor','donor','coordinator','recipient'];
+      if (!roles.includes(body.role)) return sendJson(response, 400, { error: 'Select user, provider, admin, or recipient-partner demo access.' });
       let organizationId = null;
       if (body.role === 'recipient') {
         organizationId = typeof body.organizationId === 'string' ? body.organizationId : '';
@@ -448,8 +448,8 @@ async function secondServeRoute(request, response, url) {
       return sendJson(response, 200, loadDemoScenario(secondServeDb, body.scenario || 'recovery'));
     }
     if (method === 'POST' && path === '/api/secondserve/listings') {
-      const actor = secondServeActor(request, ['donor','household']), body = await readJson(request, 12000);
-      return sendJson(response, 201, secondServeCreateListing(secondServeDb, body, actor.role));
+      const actor = secondServeActor(request, ['donor','neighbor']), body = await readJson(request, 12000);
+      return sendJson(response, 201, secondServeCreateListing(secondServeDb, body, actor.role==='neighbor'?'household':actor.role));
     }
     if (method === 'POST' && path === '/api/secondserve/intake/parse') {
       secondServeActor(request, ['donor']);

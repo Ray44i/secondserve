@@ -16,26 +16,26 @@ Open <http://127.0.0.1:4173>. The SQLite demo database is created under ignored 
 
 ## Demo workflow
 
-1. Choose **Find food nearby** to browse donation and discounted-food demo listings. Filter by offer type, food category, and distance radius; inspect the OpenStreetMap view. Create a food-finder profile to rank listings by neighborhood, preferred categories, and offer type. The optional address note stays in local browser storage and is not geocoded or sent to the server.
-2. Choose **Rescue coordinator** and load the recovery scenario.
+1. Choose **User** to browse free donations and discounted food. Create a profile to rank nearby offers, or click **Donate leftover food** to post a free household donation from the same dashboard.
+2. Choose **Admin** and load the recovery scenario.
 3. Run the decision agent and review its hard constraints, candidate ranking, and exclusions.
-4. Dispatch the first offer. Switch to **Recipient partner**, choose Charity A, accept, then cancel it.
-5. Switch back to coordinator: the reservation is released and the recovery agent routes a replacement offer to Community Kitchen B.
-6. Accept the replacement, report a pickup as the recipient, and verify a quantity as coordinator. Only that verified quantity enters the impact ledger.
+4. Dispatch the first offer. Open the secondary **Recipient partner demo view**, choose Charity A, accept, then cancel it.
+5. Switch back to **Admin**: the reservation is released and the recovery agent routes a replacement offer to Community Kitchen B.
+6. Accept the replacement, report a pickup as the recipient, and verify a quantity as Admin. Only that verified quantity enters the impact ledger.
 7. Try the review scenario to see incomplete handling facts blocked from automatic matching.
 
 ## Provider closeout loop
 
-1. Choose **Food business** and enter a morning batch: product, quantity made, unit, regular price, evening discount, pickup deadline, and provider-confirmed handling/date/allergen facts. A resized product photo can optionally help Muse Spark suggest the visible name/category; it cannot count pieces or verify safety.
+1. Choose **Provider** and enter a morning batch: product, quantity made, unit, regular price, evening discount, pickup deadline, and provider-confirmed handling/date/allergen facts. A resized product photo can optionally help Muse Spark suggest the visible name/category; it cannot count pieces or verify safety.
 2. In the prototype, use **Record sale event** to simulate a POS sale. A real POS connector would send these idempotent sale events automatically; no register vendor is connected here.
 3. The local server runs the 21:00 Istanbul closeout. It reconciles opening stock minus POS sales, then adds the remaining eligible quantity to the nearby discounted offers. Restarting the server also runs any missed closeout.
-4. Choose **Find food nearby** and select **Food seeker** to see the offer. **Buy for pickup · demo** reduces the same inventory count; it does not take payment or create a real booking.
+4. Choose **User** to see the offer. **Buy for pickup · demo** reduces the same inventory count; it does not take payment or create a real booking.
 
 The scheduler uses deterministic stock math; Muse Spark is not asked to infer sales or inventory. Unknown allergens, unconfirmed handling, expired pickup windows, or missing provider attestation prevent the batch from being listed automatically.
 
 ## Household free donations
 
-Choose **Donate from home** on the demo role screen or **Donate leftover food** from the nearby page. Household posts are donation-only (the server forces the preference to `donation`), require the donor to confirm declared allergen, date, storage, condition, and pickup details, and appear on the nearby board while active. The coordinator demo can evaluate them for recipient partners. Use a neighborhood or public pickup point only; do not enter a home address or private contact details. Household posts remain in the local demo database; there is no real public network, contact exchange, or pickup booking.
+From the **User** dashboard, choose **Donate leftover food**. Household posts are donation-only (the server forces the preference to `donation`), require the donor to confirm declared allergen, date, storage, condition, and pickup details, and appear on the nearby board while active. The Admin demo can evaluate them for recipient partners. Use a neighborhood or public pickup point only; do not enter a home address or private contact details. Household posts remain in the local demo database; there is no real public network, contact exchange, or pickup booking.
 
 Offers and partner registry data are simulated; no outside organizations are contacted.
 
