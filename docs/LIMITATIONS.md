@@ -1,12 +1,10 @@
 # Limitations and responsible-use boundary
 
 - Single-user local demo with SQLite; no deployment, account isolation, production login, or secure RBAC.
-- Seeded organizations and their verification, capacities, availability, reliability, and coordinates are fictional.
-- The nearby food finder displays seeded example businesses, products, prices, and pickup windows; there is no real business inventory or reservation service.
-- Distances are straight-line estimates; there is no live geocoder, routing engine, or real business availability.
-- The map uses OpenStreetMap tiles but displays fictional pins. Optional browser location stays in the tab and sorts sample pins; tile requests reveal the displayed map area to the tile provider.
-- OpenStreetMap supplies map tiles, but the displayed business pins are fictional. Optional browser geolocation stays in the tab and only sorts the sample pins; map tile requests disclose the displayed area to the tile provider.
-- Offer dispatch and all external notifications are simulated.
+- Food-finder profiles are stored only in local browser storage; they are not verified identities, secure accounts, or cloud-synced profiles. The free-text address is a private note, is not used for routing, and is never sent to the server or geocoded.
+- The nearby food finder displays fictional businesses, products, prices, pickup windows, and pins; there is no real inventory, reservation service, or external business integration.
+- OpenStreetMap supplies the map tiles. Distances are approximate straight-line estimates; there is no live geocoder or routing engine. Optional browser location stays in the tab and sorts sample pins. Tile requests reveal the displayed map area to the tile provider.
+- Offer dispatch and external notifications are simulated.
 - The optional model feature extracts text only. It does not inspect food or photos and cannot confirm safety.
 - Business attestations and declared facts are unverified; coordinators and businesses must follow applicable local requirements.
 - Date/storage rules are conservative product heuristics, not legal advice or regulatory certification.

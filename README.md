@@ -16,7 +16,7 @@ Open <http://127.0.0.1:4173>. The SQLite demo database is created under ignored 
 
 ## Demo workflow
 
-1. Choose **Find food nearby** to browse donation and discounted-food demo listings. Filter by offer type, food category, and distance radius; inspect the OpenStreetMap view. Optional browser location sorts the fictional pins by approximate distance.
+1. Choose **Find food nearby** to browse donation and discounted-food demo listings. Filter by offer type, food category, and distance radius; inspect the OpenStreetMap view. Create a food-finder profile to rank listings by neighborhood, preferred categories, and offer type. The optional address note stays in local browser storage and is not geocoded or sent to the server.
 2. Choose **Rescue coordinator** and load the recovery scenario.
 3. Run the decision agent and review its hard constraints, candidate ranking, and exclusions.
 4. Dispatch the first offer. Switch to **Recipient partner**, choose Charity A, accept, then cancel it.
@@ -34,6 +34,7 @@ Set `MODEL_API_KEY` in local `.env` and `SECONDSERVE_MODEL_ENABLED=true`. The op
 
 - This is a single-process local prototype backed by SQLite, not a deployed multi-user service.
 - Login roles are demo role selectors, not authentication or production RBAC.
+- Food-finder profiles are stored in this browser only. The neighborhood sets an approximate map center; the address field is a private note and is not used for routing.
 - Nearby businesses, products, prices, pickup windows, recipient records, verification badges, coordinates, capacity, and availability are fictional demo fixtures. OpenStreetMap provides real map tiles, but there is no live business inventory, geocoder, or booking flow. Location sorting is approximate; the location is kept in the current tab.
 - Notifications are simulated. No recipient receives an actual email, SMS, or push message.
 - Photos and image-based food inspection are not implemented. The intake model is text-only.

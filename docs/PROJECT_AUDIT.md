@@ -6,7 +6,7 @@ Audit date: 2026-10-31.
 
 - Root app is SecondServe, a solo food-surplus rescue coordination prototype.
 - Browser UI: `secondserve.html`, `secondserve.css`, `secondserve.js`.
-- Nearby food board with donation/discount/category/radius filters and OpenStreetMap map pins. The listings and pins are fictional demo data.
+- Nearby food board with a browser-local profile, donation/discount/category/radius filters, preference-ranked suggestions, and OpenStreetMap map pins. The listings and pins are fictional demo data.
 - Node server: `server.mjs`; data: Node built-in SQLite in ignored `data/secondserve.sqlite`.
 - Domain: `secondserve-domain.mjs`; schema: `secondserve-schema.sql`.
 - Optional structured intake draft uses Muse Spark only after explicit user action and requires `SECONDSERVE_MODEL_ENABLED=true` and a server-side key.
@@ -18,7 +18,7 @@ Constrained intake, human-review safety holds, eligibility and weighted ranking,
 
 ## Confirmed prototype limits
 
-Demo role selection is not authentication or secure RBAC. Recipients, marketplace listings, prices, registry status, capacities, availability, and coordinates are fictional. OpenStreetMap supplies the basemap; there is no live business inventory, geocoding, booking, or route calculation. Dispatch and notifications are simulated. There is no image analysis, external partner integration, hosted deployment, emissions model, or automated split allocation. Safety heuristics are not certification or legal advice.
+Demo role selection is not authentication or secure RBAC. Food-finder profiles remain in local browser storage and are not synced to an account. Recipients, marketplace listings, prices, registry status, capacities, availability, and coordinates are fictional. OpenStreetMap supplies the basemap; there is no live business inventory, geocoding, booking, or route calculation. Dispatch and notifications are simulated. There is no image analysis, external partner integration, hosted deployment, emissions model, or automated split allocation. Safety heuristics are not certification or legal advice.
 
 ## Submission checks to complete
 

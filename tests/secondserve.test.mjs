@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { MATCH_WEIGHTS, acceptOffer, cancelAcceptedOffer, dispatchOffer, getNearbyDemoListings, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, runDecisionAgent, verifyPickup } from '../secondserve-domain.mjs';
+import { recommendFoodListings } from '../secondserve-recommendations.mjs';
 
 function setup() {
   const db = new DatabaseSync(':memory:');
@@ -112,4 +113,21 @@ test('nearby food board includes fictional donation and discounted pins with val
   assert.deepEqual([...new Set(listings.map(item=>item.offerType))].sort(),['discounted_sale','donation']);
   assert.ok(listings.every(item=>item.business.startsWith('Demo ')));
   assert.ok(listings.every(item=>Number.isFinite(item.lat)&&Number.isFinite(item.lon)&&Date.parse(item.pickupUntil)>Date.now()));
+});
+
+test('profile ranking promotes chosen offer/category within the selected area and radius', () => {
+  const listings=getNearbyDemoListings();
+  const recommended=recommendFoodListings(listings,{origin:{lat:40.9824,lon:29.0608},profile:{neighborhood:'kadikoy',categories:['Produce'],offerPreference:'discounted_sale'},radiusKm:5});
+  assert.equal(recommended[0].category,'Produce');
+  assert.equal(recommended[0].offerType,'discounted_sale');
+  assert.equal(recommended[0].recommended,true);
+  assert.ok(recommended.every(item=>item.distanceKm<=5));
+  assert.match(recommended[0].recommendationReason,/food and offer preferences/);
+});
+
+test('without a profile, the food board sorts by distance and makes no personalized claims', () => {
+  const listings=getNearbyDemoListings();
+  const nearby=recommendFoodListings(listings,{profile:null,radiusKm:3});
+  assert.ok(nearby.every((item,index)=>index===0||nearby[index-1].distanceKm<=item.distanceKm));
+  assert.ok(nearby.every(item=>item.recommended===false));
 });
