@@ -1,6 +1,6 @@
 # SecondServe
 
-**Surplus food, routed with care.** SecondServe is a solo-builder prototype of an AI-assisted food rescue network. Providers enter the morning production quantity once; sale events reconcile stock; a local scheduler releases eligible leftovers to the nearby board at 21:00 Europe/Istanbul using a preset discount. Customers can browse the discount and simulate a pickup purchase. The prototype also coordinates recipient-partner rescues, recovers from cancellations, and counts food as rescued only after pickup quantity is verified.
+**Surplus food, routed with care.** SecondServe is a solo-builder prototype of an AI-assisted food rescue network. Providers can use an opt-in product photo to draft a visible item count, confirm the batch, and let sale events reconcile stock; a local scheduler releases eligible leftovers to the nearby board at the provider's chosen time and discount. Customers can browse the offer and simulate a pickup purchase. The prototype also coordinates recipient-partner rescues, recovers from cancellations, and counts food as rescued only after pickup quantity is verified.
 
 ## Run locally
 
@@ -17,16 +17,16 @@ Open <http://127.0.0.1:4173>. The SQLite demo database is created under ignored 
 ## Demo workflow
 
 1. Choose **User** to browse free donations and discounted food. Create a profile to rank nearby offers, or click **Donate leftover food** to post a free household donation from the same dashboard.
-2. Choose **Admin** and load the recovery scenario.
+2. Open the **Owner workspace** and load the recovery scenario.
 3. Run the decision agent and review its hard constraints, candidate ranking, and exclusions.
 4. Dispatch the first offer. Open the secondary **Recipient partner demo view**, choose Charity A, accept, then cancel it.
-5. Switch back to **Admin**: the reservation is released and the recovery agent routes a replacement offer to Community Kitchen B.
-6. Accept the replacement, report a pickup as the recipient, and verify a quantity as Admin. Only that verified quantity enters the impact ledger.
+5. Switch back to the **Owner workspace**: the reservation is released and the recovery agent routes a replacement offer to Community Kitchen B.
+6. Accept the replacement, report a pickup as the recipient, and verify a quantity as the owner. Only that verified quantity enters the impact ledger.
 7. Try the review scenario to see incomplete handling facts blocked from automatic matching.
 
 ## Provider closeout loop
 
-1. Choose **Provider** and enter a morning batch: product, quantity made, unit, regular price, evening discount, pickup deadline, and provider-confirmed handling/date/allergen facts. A resized product photo can optionally help Muse Spark suggest the visible name/category; it cannot count pieces or verify safety.
+1. Choose **Provider** and enter a morning batch. A resized photo can optionally ask Muse Spark to suggest the product/category and estimate countable units visible in-frame; it prefills the quantity and unit when confidence is medium or high. Confirm that the photo shows the complete morning batch. The visual estimate cannot include hidden/off-frame stock or verify safety. Add the price, pickup deadline, and provider-confirmed handling/date/allergen facts.
 2. In the prototype, use **Record sale event** to simulate a POS sale. A real POS connector would send these idempotent sale events automatically; no register vendor is connected here.
 3. The local server runs the 21:00 Istanbul closeout. It reconciles opening stock minus POS sales, then adds the remaining eligible quantity to the nearby discounted offers. Restarting the server also runs any missed closeout.
 4. Choose **User** to see the offer. **Buy for pickup · demo** reduces the same inventory count; it does not take payment or create a real booking.
@@ -44,7 +44,7 @@ Offers and partner registry data are simulated; no outside organizations are con
 Set `MODEL_API_KEY` in local `.env` and `SECONDSERVE_MODEL_ENABLED=true`. SecondServe uses Muse Spark in three explicit, bounded steps:
 
 - **Structured text intake:** a donor can ask Muse Spark to extract only facts stated in a business note. It creates an editable draft, never a listing or offer.
-- **Multimodal photo intake:** after choosing an image, the donor must check consent and click Analyze. The browser resizes the image before sending it to Meta. The model suggests only a visible food identity and presentation; it cannot establish quantity, ingredients, allergens, freshness, handling, safety, or eligibility. It creates an editable draft only.
+- **Multimodal photo intake:** after choosing an image, the provider must check consent and click Analyze; this may use credits. The browser resizes the image before sending it to Meta. The model suggests visible food identity/category and may estimate separable, visible units to prefill the opening quantity. It cannot infer the full batch from hidden or off-frame items, ingredients, allergens, freshness, handling, safety, or eligibility. The provider reviews and confirms every field before creating a batch; no listing is created by image analysis alone.
 - **Coordinator brief:** after deterministic eligibility checks, a coordinator may ask Muse Spark to explain the already-computed result and suggest questions to verify. It cannot change scores, recommend excluded recipients, release a safety hold, or dispatch an offer.
 
 No model request is made implicitly. Every generated result is advisory and must be reviewed by a person. Requests may consume Meta Model API credits. The app sends the text or resized image only after the corresponding explicit action. Never commit `.env` or publish API keys.

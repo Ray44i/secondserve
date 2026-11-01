@@ -325,7 +325,11 @@ $('analyzeBatchPhoto').onclick=async()=>{
   try{const result=await request('/api/secondserve/intake/vision',{method:'POST',body:{consent:true,dataUrl:state.batchPhotoDataUrl}}),draft=result.draft;
     if(draft.foodName&&draft.foodName.toLowerCase()!=='unknown')$('batchFoodName').value=draft.foodName;
     $('batchCategory').value=draft.category==='unknown'?'other':draft.category;
-    $('batchPhotoStatus').textContent=`${result.model} suggests: ${draft.visibleDescription} · uncertainty ${draft.uncertainty}. You still enter the morning quantity and verify every business fact.`;
+    const canApplyCount=draft.visibleCount>0&&['high','medium'].includes(draft.countConfidence)&&draft.countUnit!=='unknown';
+    if(canApplyCount){$('batchOpening').value=String(draft.visibleCount);$('batchUnit').value=draft.countUnit;}
+    $('batchPhotoStatus').textContent=canApplyCount
+      ?`${result.model} suggests ${draft.foodName}: ${draft.visibleCount} ${draft.countUnit} visible (${draft.countConfidence} count confidence). ${draft.countDescription} Confirm this photo shows the whole morning batch; image counts can miss hidden or off-frame items. Verify price, allergens, storage, dates, and all business facts.`
+      :`${result.model} suggests ${draft.foodName||'a food item'}: ${draft.visibleDescription} Count not clear enough to autofill (${draft.countDescription}). Enter the full batch quantity yourself. Verify price, allergens, storage, dates, and all business facts.`;
   }catch(error){$('batchPhotoStatus').textContent=error.message;toast(error.message);}finally{updateBatchPhotoButton();}
 };
 function updateBatchPhotoButton(){const button=$('analyzeBatchPhoto');if(button)button.disabled=!state.model||!state.batchPhotoDataUrl||!$('batchPhotoConsent')?.checked;}
