@@ -3,7 +3,7 @@ const $ = (id) => document.getElementById(id);
 const savedSession = (() => { try { return JSON.parse(sessionStorage.getItem('secondserve.demo.session') || '{}'); } catch { return {}; } })();
 if(savedSession.role==='household'){sessionStorage.removeItem('secondserve.demo.session');savedSession.token='';savedSession.role='';}
 const savedProfile = (() => { try { return JSON.parse(localStorage.getItem('secondserve.food.profile') || 'null'); } catch { return null; } })();
-const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null, foodPhotoDataUrl:'',householdPhotoDataUrl:'',batchPhotoDataUrl:'',providerBatches:[],activeProviderBatch:null };
+const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null, foodPhotoDataUrl:'',householdPhotoDataUrl:'',batchPhotoDataUrl:'',providerBatches:[],activeProviderBatch:null,cart:[],checkoutBusy:false,lastReceipts:[] };
 const roleNames = { neighbor:'User', donor:'Provider', coordinator:'Owner', recipient:'Recipient partner' };
 const marketCategories = [
   { value:'Bakery',label:'Bakery & bread',icon:'♨' },{ value:'Produce',label:'Fruit & veg',icon:'✿' },
@@ -160,6 +160,7 @@ function visibleMarketListings(){
 }
 function renderMarketplace(){
   const list=$('marketList'); if(!list)return;
+  $('openBasket').hidden=state.role!=='neighbor';
   initMarketMap(); const items=visibleMarketListings(); list.replaceChildren(); state.marketMarkers.forEach(m=>m.remove());state.marketMarkers=[];
   renderCategoryFilters();
   $('marketCount').textContent=`${items.length} nearby ${items.length===1?'offer':'offers'}`;
@@ -177,16 +178,56 @@ function renderMarketplace(){
     card.innerHTML=`<div>${item.photoDataUrl?`<img class="market-photo-preview" src="${safe(item.photoDataUrl)}" alt="Photo of ${safe(item.name)}" loading="lazy">`:''}${pickLabel}<div class="market-card-labels"><span class="category-pill"><i aria-hidden="true">${category?.icon||'•'}</i>${safe(category?.label||item.category)}</span><span class="market-type ${item.offerType==='discounted_sale'?'discount':''}">${item.offerType==='donation'?'FREE DONATION':item.discountPercent?`${item.discountPercent}% OFF`:'DISCOUNTED'}</span></div><h3>${safe(item.name)}</h3><div class="market-business">${safe(item.business)}</div><p>${safe(item.note)}</p></div><div class="market-price">${price}<small>${item.regularPriceTry?`WAS ${fmtNum(item.regularPriceTry)} ₺`:(item.offerType==='donation'?'NO COST':'DEMO PRICE')}</small></div><div class="market-card-foot"><span><b>${fmtNum(item.quantity)} ${safe(item.unit)}</b> left</span><span>${safe(item.location)}</span><span><b>${item.distanceKm.toFixed(1)} km</b> approx.</span><span>Pickup by ${when(item.pickupUntil)}</span></div>`;
     if(item.purchaseable&&state.role==='neighbor'){
       const buy=document.createElement('div');buy.className='quick-buy';const quantity=document.createElement('input');quantity.type='number';quantity.min='1';quantity.step='1';quantity.max=String(item.quantity);quantity.value='1';quantity.setAttribute('aria-label',`Quantity of ${item.name} to buy for pickup`);
-      const action=document.createElement('button');action.className='button primary';action.type='button';action.textContent='Buy for pickup · demo';action.title='Simulated purchase only; no payment is taken.';
-      action.onclick=async event=>{event.stopPropagation();action.disabled=true;try{const receipt=await request(`/api/secondserve/nearby/provider-${encodeURIComponent(item.batchId)}/purchase`,{method:'POST',body:{quantity:Number(quantity.value)}});await loadMarketplace();toast(`${receipt.quantity} ${receipt.unit} reserved for pickup. No payment was taken.`);}catch(error){toast(error.message);action.disabled=false;}};
-      const caveat=document.createElement('small');caveat.textContent='Demo checkout · no payment';buy.append(quantity,action,caveat);card.append(buy);
+      const action=document.createElement('button');action.className='button primary';action.type='button';action.textContent='Add to basket';action.title='Add this offer to your basket; no order is placed yet.';
+      action.onclick=event=>{event.stopPropagation();addToBasket(item,Number(quantity.value));};
+      const caveat=document.createElement('small');caveat.textContent='Review basket before demo checkout';buy.append(quantity,action,caveat);card.append(buy);
     }
     const focus=()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');const marker=state.marketMarkers[index];if(marker){state.marketMap?.setView(marker.getLatLng(),15,{animate:true});marker.openPopup();}};
     card.onclick=focus;card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();focus();}};list.append(card);
     if(state.marketMap){const shortPrice=item.offerType==='donation'?'FREE':`${fmtNum(item.priceTry)} ₺`;const icon=L.divIcon({className:'',html:`<div class="map-price-pin ${item.offerType==='discounted_sale'?'discount':''}"><b>${safe(shortPrice)}</b><small>${index+1}</small></div>`,iconSize:[78,45],iconAnchor:[39,44]});const marker=L.marker([item.lat,item.lon],{icon}).addTo(state.marketMap);marker.bindPopup(`<div class="map-popup"><small>${item.offerType==='donation'?'COMMUNITY DONATION':'EVENING FOOD DEAL'}</small><b>${safe(item.name)}</b><span>${safe(item.business)} · ${safe(item.location)}</span><strong>${price}${item.regularPriceTry?` <del>${fmtNum(item.regularPriceTry)} ₺</del>`:''}</strong><span>${fmtNum(item.quantity)} ${safe(item.unit)} · ${item.distanceKm.toFixed(1)} km away</span></div>`,{className:'food-map-popup',closeButton:false});marker.on('click',()=>{document.querySelectorAll('.market-card').forEach(el=>el.classList.remove('selected'));card.classList.add('selected');card.scrollIntoView({block:'nearest',behavior:'smooth'});});state.marketMarkers.push(marker);}
   }
+  updateBasketBadge();
   if(state.marketMap&&state.userLocation){if(!state.userMarker)state.userMarker=L.marker([state.userLocation.lat,state.userLocation.lon],{icon:L.divIcon({className:'',html:'<div class="food-marker user"></div>',iconSize:[17,17],iconAnchor:[8,8]})}).addTo(state.marketMap);else state.userMarker.setLatLng([state.userLocation.lat,state.userLocation.lon]);state.userMarker.bindPopup('Your location (kept in this tab).');}
   if(state.marketMap&&!state.userLocation&&items.length){const bounds=L.latLngBounds(items.map(i=>[i.lat,i.lon]));if(items.length>1)state.marketMap.fitBounds(bounds.pad(.18));}
+}
+function addToBasket(item,quantity){
+  const amount=Number(quantity),available=Number(item.quantity);
+  if(!Number.isInteger(amount)||amount<1||amount>available){toast(`Choose 1–${fmtNum(available)} ${item.unit}.`);return;}
+  const existing=state.cart.find(row=>row.batchId===item.batchId);
+  if(existing){if(existing.quantity+amount>available){toast(`Only ${fmtNum(available-existing.quantity)} more ${item.unit} can be added.`);return;}existing.quantity+=amount;}
+  else state.cart.push({id:item.id,batchId:item.batchId,name:item.name,business:item.business,unit:item.unit,quantity:amount,stock:available,priceTry:Number(item.priceTry),regularPriceTry:Number(item.regularPriceTry||0),location:item.location,pickupUntil:item.pickupUntil});
+  updateBasketBadge();renderBasket();toast(`${amount} ${item.unit} added to your basket.`);
+}
+function updateBasketBadge(){const count=state.cart.reduce((sum,item)=>sum+item.quantity,0);const badge=$('basketCount');if(badge)badge.textContent=String(count);const button=$('openBasket');if(button)button.setAttribute('aria-label',`Open basket, ${count} items`);}
+function cartTotal(){return Math.round(state.cart.reduce((sum,item)=>sum+item.quantity*item.priceTry,0)*100)/100;}
+function renderBasket(){
+  const host=$('basketItems');if(!host)return;host.replaceChildren();
+  if(!state.cart.length){host.innerHTML='<div class="basket-empty"><b>Your basket is empty</b><span>Choose a discounted nearby offer and add it here to review it before checkout.</span></div>';}
+  for(const [index,item] of state.cart.entries()){
+    const row=document.createElement('article');row.className='basket-row';
+    row.innerHTML=`<div class="basket-row-main"><div><b>${safe(item.name)}</b><small>${safe(item.business)} · ${safe(item.location)} · pickup by ${when(item.pickupUntil)}</small>${item.unavailable?'<small class="basket-unavailable">This offer is no longer available.</small>':''}</div><button type="button" class="basket-remove" aria-label="Remove ${safe(item.name)} from basket">Remove</button></div><div class="basket-row-bottom"><label>QUANTITY<input type="number" min="1" max="${Math.max(1,item.stock)}" step="1" value="${item.quantity}" aria-label="Quantity of ${safe(item.name)}" ${item.unavailable?'disabled':''}></label><span>${fmtNum(item.priceTry)} ₺ each</span><b>${(item.quantity*item.priceTry).toFixed(2)} ₺</b></div>`;
+    row.querySelector('input').onchange=event=>{const amount=Number(event.target.value);if(!Number.isInteger(amount)||amount<1||amount>item.stock){event.target.value=String(item.quantity);toast(`Choose 1–${fmtNum(item.stock)} ${item.unit}.`);return;}item.quantity=amount;renderBasket();updateBasketBadge();};
+    row.querySelector('.basket-remove').onclick=()=>{state.cart.splice(index,1);renderBasket();updateBasketBadge();};host.append(row);
+  }
+  $('basketSubtotal').textContent=`₺${cartTotal().toFixed(2)}`;$('toPayment').disabled=!state.cart.length||state.cart.some(item=>item.unavailable||item.quantity>item.stock)||state.checkoutBusy;
+}
+function showCheckoutStage(stage){$('basketStage').hidden=stage!=='basket';$('paymentStage').hidden=stage!=='payment';$('receiptStage').hidden=stage!=='receipt';$('basketTitle').textContent=stage==='basket'?'Your basket':stage==='payment'?'Demo checkout':'Order confirmed';$('checkoutKicker').textContent=stage==='basket'?'USER · YOUR BASKET':stage==='payment'?'USER · DEMO PAYMENT':'USER · DEMO RECEIPT';$('checkoutSubtitle').textContent=stage==='basket'?'Review quantities before continuing to demo checkout.':stage==='payment'?'Choose a demo method and review the amount before placing this simulated order.':'Your demo order was recorded locally.';}
+function renderPaymentSummary(){
+  const host=$('paymentSummary');host.replaceChildren();
+  for(const item of state.cart){const row=document.createElement('div');row.className='payment-summary-row';row.innerHTML=`<span>${safe(item.name)} <small>× ${item.quantity} ${safe(item.unit)}</small></span><b>₺${(item.quantity*item.priceTry).toFixed(2)}</b>`;host.append(row);}
+  const total=document.createElement('div');total.className='payment-summary-total';total.innerHTML=`<span>Total due in demo</span><b>₺${cartTotal().toFixed(2)}</b>`;host.append(total);
+}
+async function completeDemoOrder(){
+  if(state.checkoutBusy||!state.cart.length)return;state.checkoutBusy=true;$('completeDemoOrder').disabled=true;$('completeDemoOrder').textContent='Processing demo order…';
+  const completed=[],failed=[];
+  for(const item of [...state.cart]){
+    try{const result=await request(`/api/secondserve/nearby/provider-${encodeURIComponent(item.batchId)}/purchase`,{method:'POST',body:{quantity:item.quantity}});completed.push({...result,name:item.name,business:item.business,location:item.location,pickupUntil:item.pickupUntil});state.cart=state.cart.filter(row=>row.batchId!==item.batchId);}
+    catch(error){failed.push(`${item.name}: ${error.message}`);}
+  }
+  state.lastReceipts=completed;state.checkoutBusy=false;updateBasketBadge();await loadMarketplace();
+  if(failed.length){renderBasket();showCheckoutStage('basket');toast(completed.length?`Some items were ordered. ${failed.join(' ')}`:failed.join(' '));$('completeDemoOrder').disabled=false;$('completeDemoOrder').textContent='Complete demo order →';return;}
+  $('receiptContent').innerHTML=`<div class="receipt-status">DEMO ORDER · NOT A PAYMENT</div>${completed.map(item=>`<article class="receipt-line"><b>${safe(item.quantity)} ${safe(item.unit)} · ${safe(item.name)}</b><span>${safe(item.business)} · ${safe(item.location)}</span><span>Pickup by ${when(item.pickupUntil)}</span><small>Demo order reference ${safe(item.receipt)}</small></article>`).join('')}<div class="payment-summary-total"><span>Recorded demo total</span><b>₺${completed.reduce((sum,item)=>sum+Number(item.totalTry||0),0).toFixed(2)}</b></div><p>Payment method: ${document.querySelector('input[name="demoPayment"]:checked')?.value==='pickup'?'Pay at pickup (demo)':'Simulated card (demo)'} · <b>No charge taken</b></p>`;
+  showCheckoutStage('receipt');$('completeDemoOrder').disabled=false;$('completeDemoOrder').textContent='Complete demo order →';
 }
 function fitMarketPins(){
   if(!state.marketMap)return;
@@ -223,7 +264,7 @@ function renderCategoryFilters(){
   }
 }
 async function loadMarketplace(){
-  try{const result=await request('/api/secondserve/nearby',{auth:false});state.listings=result.listings||[];renderMarketplace();if(!window.L)$('mapCaption').textContent='Map library unavailable · browse the nearby list below.';}
+  try{const result=await request('/api/secondserve/nearby',{auth:false});state.listings=result.listings||[];for(const cartItem of state.cart){const live=state.listings.find(item=>item.batchId===cartItem.batchId&&item.purchaseable);cartItem.unavailable=!live;if(live){cartItem.stock=Number(live.quantity);cartItem.priceTry=Number(live.priceTry);cartItem.pickupUntil=live.pickupUntil;}}renderMarketplace();renderBasket();if(!window.L)$('mapCaption').textContent='Map library unavailable · browse the nearby list below.';}
   catch(error){$('marketList').innerHTML=`<div class="empty-state">Could not load listings: ${safe(error.message)}</div>`;}
 }
 document.querySelectorAll('.sidebar nav a[data-view]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();setView(link.dataset.view);if(link.dataset.view==='operations'&&link.hash)document.querySelector(link.hash)?.scrollIntoView({behavior:'smooth'});}));
@@ -231,6 +272,14 @@ $('enterWorkspace').onclick=()=>{ $('welcomeScreen').hidden=true; $('loginScreen
 $('backToWelcome').onclick=()=>{ $('loginScreen').hidden=true; $('welcomeScreen').hidden=false; window.scrollTo({top:0,behavior:'smooth'}); };
 document.querySelectorAll('[data-offer-filter]').forEach(button=>button.addEventListener('click',()=>{state.offerFilter=button.dataset.offerFilter;document.querySelectorAll('[data-offer-filter]').forEach(item=>item.classList.toggle('active',item===button));renderMarketplace();}));
 $('marketRadius').onchange=event=>{state.radiusKm=Number(event.target.value);renderMarketplace();};
+$('openBasket').onclick=()=>{renderBasket();showCheckoutStage('basket');$('basketDialog').showModal();};
+$('closeBasket').onclick=()=>$('basketDialog').close();
+$('continueShopping').onclick=()=>$('basketDialog').close();
+$('toPayment').onclick=()=>{if(!state.cart.length)return;renderPaymentSummary();showCheckoutStage('payment');};
+$('backToBasket').onclick=()=>{renderBasket();showCheckoutStage('basket');};
+$('completeDemoOrder').onclick=completeDemoOrder;
+$('closeReceipt').onclick=()=>$('basketDialog').close();
+$('basketDialog').addEventListener('click',event=>{if(event.target===$('basketDialog'))$('basketDialog').close();});
 $('mapShowAll').onclick=fitMarketPins;
 $('editProfile').onclick=()=>{
   const profile=state.profile||{};$('profileName').value=profile.name||'';$('profileAddress').value=profile.addressNote||'';$('profileNeighborhood').value=profile.neighborhood||'kadikoy';$('profileHousehold').value=String(profile.householdSize||1);$('profileOffer').value=profile.offerPreference||'all';$('profileRadius').value=String(profile.radiusKm||10);
