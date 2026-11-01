@@ -109,7 +109,8 @@ test('verified impact quantities are grouped by unit, never added together', () 
 
 test('nearby food board includes fictional donation and discounted pins with valid pickup windows', () => {
   const listings=getNearbyDemoListings();
-  assert.equal(listings.length,5);
+  assert.equal(listings.length,10);
+  assert.deepEqual([...new Set(listings.map(item=>item.category))].sort(),['Bakery','Dairy','Drinks','Pantry','Prepared meals','Produce']);
   assert.deepEqual([...new Set(listings.map(item=>item.offerType))].sort(),['discounted_sale','donation']);
   assert.ok(listings.every(item=>item.business.startsWith('Demo ')));
   assert.ok(listings.every(item=>Number.isFinite(item.lat)&&Number.isFinite(item.lon)&&Date.parse(item.pickupUntil)>Date.now()));
