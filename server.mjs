@@ -607,7 +607,7 @@ const server = createServer(async (request, response) => {
 function providerCloseoutTick() {
   try {
     const released=runProviderEveningCloseout(secondServeDb);
-    if(released.length)console.log(`[SecondServe] automatic 21:00 local closeout released ${released.length} discounted demo offer(s).`);
+    if(released.length)console.log(`[SecondServe] scheduled Istanbul-time closeout released ${released.length} discounted demo offer(s).`);
   } catch (error) { console.error(`[SecondServe] provider closeout could not run: ${error.name||'Error'}`); }
 }
 providerCloseoutTick();

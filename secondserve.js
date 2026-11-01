@@ -32,7 +32,7 @@ async function login(role) {
     const result=await request('/api/secondserve/session',{method:'POST',body,auth:false});
     state.token=result.token; state.role=result.role; state.organizationId=result.organizationId||''; sessionStorage.setItem('secondserve.demo.session',JSON.stringify({token:state.token,role:state.role,organizationId:state.organizationId}));
     $('loginScreen').hidden=true; $('appShell').hidden=false; $('roleLabel').textContent=roleNames[state.role]+(state.organizationId?` · ${orgName(state.organizationId)}`:'');
-    setView(role==='neighbor'?'nearby':'operations');
+    setView(role==='neighbor'?'nearby':role==='donor'?'provider':'operations');
     await refresh();
     if(role==='neighbor') await loadMarketplace();
     if(role==='donor') await loadProviderBatches();
@@ -141,9 +141,12 @@ async function refresh() { try { render(await request('/api/secondserve/state'))
 function setView(view) {
   state.view=view;
   $('nearby').hidden=view!=='nearby';
+  $('operationsWorkspace').hidden=!['operations','provider'].includes(view);
   document.querySelectorAll('[data-operations]').forEach(el=>{el.hidden=view!=='operations';});
+  $('operationsWorkspace').classList.toggle('provider-mode',view==='provider');
+  document.querySelectorAll('[data-role-nav]').forEach(link=>{link.hidden=link.dataset.roleNav!==state.role;});
   document.querySelectorAll('.sidebar nav a[data-view]').forEach(a=>a.classList.toggle('active',a.dataset.view===view));
-  $('viewLabel').textContent=view==='nearby'?'NEARBY FOOD':'RESCUE OPERATIONS';
+  $('viewLabel').textContent=view==='nearby'?'NEARBY FOOD':view==='provider'?'INVENTORY & CLOSEOUT':state.role==='recipient'?'RECIPIENT PARTNER':'RESCUE OPERATIONS';
   if(view==='nearby'){if(!state.listings.length)loadMarketplace();requestAnimationFrame(()=>state.marketMap?.invalidateSize());}
 }
 function initMarketMap(){
@@ -201,8 +204,8 @@ function renderProviderBatches(){
   const host=$('providerBatches');if(!host)return;host.replaceChildren();
   const live=state.providerBatches.filter(batch=>['TRACKING','LISTED'].includes(batch.status));state.activeProviderBatch=live[0]||null;$('recordPosSale').disabled=!state.activeProviderBatch;
   if(!state.providerBatches.length){host.innerHTML='<div class="empty-state">Start a morning batch. The simulated POS will then update the remaining count.</div>';return;}
-  for(const batch of state.providerBatches){const row=document.createElement('article');row.className='provider-batch';const pct=Math.max(0,Math.min(100,batch.remainingQuantity/batch.openingQuantity*100));
-    row.innerHTML=`<div class="provider-batch-top"><b>${safe(batch.foodName)} · ${fmtNum(batch.openingQuantity)} ${safe(batch.unit)}</b><span>${safe(batch.status.replaceAll('_',' '))}</span></div><div class="provider-batch-meta"><span>POS sold ${fmtNum(batch.soldQuantity)}</span><span>Customer pickups ${fmtNum(batch.purchasedQuantity)}</span><span><b>${fmtNum(batch.remainingQuantity)} ${safe(batch.unit)} remaining</b></span><span>${batch.discountPercent}% evening discount</span></div><div class="provider-stockbar"><i style="width:${pct}%"></i></div><div class="provider-batch-meta"><span>Auto closeout 21:00 Europe/Istanbul · pickup by ${when(batch.pickupDeadline)}</span></div>`;host.append(row);
+  for(const batch of state.providerBatches){const row=document.createElement('article');row.className='provider-batch';const pct=Math.max(0,Math.min(100,batch.remainingQuantity/batch.openingQuantity*100)),finalPrice=(Number(batch.retailPriceTry)*(1-Number(batch.discountPercent)/100)).toFixed(2);
+    row.innerHTML=`<div class="provider-batch-top"><b>${safe(batch.foodName)} · ${fmtNum(batch.openingQuantity)} ${safe(batch.unit)}</b><span>${safe(batch.status.replaceAll('_',' '))}</span></div><div class="provider-batch-meta"><span>POS sold ${fmtNum(batch.soldQuantity)}</span><span>Customer pickups ${fmtNum(batch.purchasedQuantity)}</span><span><b>${fmtNum(batch.remainingQuantity)} ${safe(batch.unit)} remaining</b></span><span>${batch.discountPercent}% off · ₺${finalPrice} each</span></div><div class="provider-stockbar"><i style="width:${pct}%"></i></div><div class="provider-batch-meta"><span>Auto release ${safe(batch.closeoutTime||'21:00')} Europe/Istanbul · pickup by ${when(batch.pickupDeadline)}</span></div>`;host.append(row);
   }
 }
 function renderCategoryFilters(){
@@ -275,7 +278,7 @@ $('productionForm').onsubmit=async event=>{
   event.preventDefault();if(state.role!=='donor')return;
   const expiryType=$('batchExpiryType').value,expiryDate=$('batchExpiryDate').value;
   const body={foodName:$('batchFoodName').value.trim(),category:$('batchCategory').value,openingQuantity:Number($('batchOpening').value),unit:$('batchUnit').value,
-    retailPriceTry:Number($('batchPrice').value),discountPercent:Number($('batchDiscount').value),pickupLocation:$('batchPickupLocation').value.trim(),pickupDeadline:new Date($('batchPickupDeadline').value).toISOString(),
+    retailPriceTry:Number($('batchPrice').value),discountPercent:Number($('batchDiscount').value),closeoutTime:$('batchCloseoutTime').value,pickupLocation:$('batchPickupLocation').value.trim(),pickupDeadline:new Date($('batchPickupDeadline').value).toISOString(),
     allergens:$('batchAllergens').value.trim(),storage:$('batchStorage').value,condition:'reported_intact',expiryType,
     expiryAt:expiryType!=='not_applicable'&&expiryDate?new Date(`${expiryDate}T23:59:00`).toISOString():null,attested:$('batchAttested').checked};
   $('providerStatus').textContent='Saving the morning batch…';
@@ -289,6 +292,8 @@ $('recordPosSale').onclick=async()=>{
   catch(error){toast(error.message);$('recordPosSale').disabled=false;}
 };
 $('batchExpiryType').onchange=()=>{$('batchExpiryDateWrap').hidden=$('batchExpiryType').value==='not_applicable';};
+function updateDiscountPreview(){const price=Number($('batchPrice').value),discount=Number($('batchDiscount').value);$('batchDiscountedPricePreview').textContent=price>0?`₺${(price*(1-discount/100)).toFixed(2)} each (${discount}% off)`:'Enter a regular price';}
+$('batchPrice').addEventListener('input',updateDiscountPreview);$('batchDiscount').addEventListener('change',updateDiscountPreview);
 $('batchPhoto').onchange=async()=>{
   const file=$('batchPhoto').files?.[0];state.batchPhotoDataUrl='';$('batchPhotoPreview').hidden=true;updateBatchPhotoButton();
   if(!file){$('batchPhotoStatus').textContent='Nothing is sent until consent and button click.';return;}
@@ -392,7 +397,7 @@ async function boot() {
   catch {$('modelStatus').textContent='Server unavailable';}
   try {state.data=await request('/api/secondserve/state');} catch(e) {toast(e.message);return;}
   await loadMarketplace();
-  if(state.token&&state.role){try{render(state.data);$('loginScreen').hidden=true;$('appShell').hidden=false;$('roleLabel').textContent=roleNames[state.role]+(state.organizationId?` · ${orgName(state.organizationId)}`:'');setView(state.role==='neighbor'?'nearby':'operations');if(state.role==='donor')await loadProviderBatches();}catch{showLogin();}}
+  if(state.token&&state.role){try{render(state.data);$('loginScreen').hidden=true;$('appShell').hidden=false;$('roleLabel').textContent=roleNames[state.role]+(state.organizationId?` · ${orgName(state.organizationId)}`:'');setView(state.role==='neighbor'?'nearby':state.role==='donor'?'provider':'operations');if(state.role==='donor')await loadProviderBatches();}catch{showLogin();}}
 }
 // Keep the buyer board and provider ledger fresh while a demo role is open.
 setInterval(()=>{

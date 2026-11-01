@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS provider_batches (
   pickup_deadline TEXT NOT NULL, allergens TEXT NOT NULL, storage_condition TEXT NOT NULL,
   food_condition TEXT NOT NULL, expiry_type TEXT NOT NULL, expiry_at TEXT,
   business_attested INTEGER NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL,
+  closeout_minute INTEGER NOT NULL DEFAULT 1260,
   market_offer_id TEXT
 );
 CREATE TABLE IF NOT EXISTS provider_market_offers (
