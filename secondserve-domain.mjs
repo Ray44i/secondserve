@@ -41,6 +41,7 @@ export function createProviderBatch(db, raw, role = 'donor', now = new Date()) {
     storage=String(raw.storage??''), condition=String(raw.condition??''), expiryType=String(raw.expiryType??''),
     expiryAt=raw.expiryAt||null, pickupDeadline=String(raw.pickupDeadline??''), closeoutTime=String(raw.closeoutTime??'21:00');
   const closeoutMatch=/^(\d{2}):(\d{2})$/.exec(closeoutTime), closeoutMinute=closeoutMatch?Number(closeoutMatch[1])*60+Number(closeoutMatch[2]):-1;
+  const closeoutToday=closeoutMatch?new Date(`${localDay(now.toISOString())}T${closeoutTime}:00+03:00`):null;
   if (!foodName||foodName.length>80||!['bakery','produce','dairy','prepared_meals','pantry','other'].includes(category)
     ||!Number.isFinite(opening)||opening<=0||opening>10000||!['pieces','packs','boxes','portions','loaves','bottles','kg'].includes(unit)
     ||!Number.isFinite(price)||price<=0||price>1000000||!Number.isInteger(discount)||discount<10||discount>80
@@ -48,8 +49,9 @@ export function createProviderBatch(db, raw, role = 'donor', now = new Date()) {
     ||condition!=='reported_intact'||!['use_by','best_before','not_applicable'].includes(expiryType)
     ||(expiryType!=='not_applicable'&&!Number.isFinite(Date.parse(expiryAt)))||!Number.isFinite(Date.parse(pickupDeadline))
     ||![17,18,19,20,21,22].includes(Math.floor(closeoutMinute/60))||closeoutMinute%60!==0
-    ||Date.parse(pickupDeadline)<=now.getTime()||Date.parse(pickupDeadline)>now.getTime()+24*60*60_000||raw.attested!==true) {
-    throw Object.assign(new Error('Confirm the morning quantity, price, pickup deadline, handling and date facts, allergens, and provider attestation.'),{status:400});
+    ||Date.parse(pickupDeadline)<=now.getTime()||Date.parse(pickupDeadline)>now.getTime()+24*60*60_000
+    ||(closeoutToday>now&&Date.parse(pickupDeadline)<=closeoutToday.getTime())||raw.attested!==true) {
+    throw Object.assign(new Error('Confirm the morning quantity, price, pickup deadline after the selected release time, handling and date facts, allergens, and provider attestation.'),{status:400});
   }
   const business=db.prepare("SELECT id,lat,lon FROM organizations WHERE id='golden-crust'").get();
   const id=randomUUID(), created=now.toISOString();
@@ -70,6 +72,20 @@ export function recordProviderSale(db, batchId, quantity, {source='simulated_pos
     const updated=providerInventory(db,batchId);
     if(updated.remainingQuantity===0){db.prepare("UPDATE provider_batches SET status='SOLD_OUT' WHERE id=?").run(batchId);db.prepare("UPDATE provider_market_offers SET status='SOLD_OUT' WHERE batch_id=?").run(batchId);}
     return providerInventory(db,batchId);
+  });
+}
+
+export function releaseProviderBatchNow(db,batchId,role='donor',now=new Date()) {
+  if(role!=='donor')throw Object.assign(new Error('Only the provider can publish this batch.'),{status:403});
+  return tx(db,()=>{
+    const batch=providerInventory(db,batchId);
+    if(batch.status!=='TRACKING')throw Object.assign(new Error('Only a batch waiting for its scheduled release can be published now.'),{status:409});
+    if(Date.parse(batch.pickup_deadline)<=now.getTime())throw Object.assign(new Error('This batch pickup deadline has passed.'),{status:409});
+    if(batch.remainingQuantity<=0)throw Object.assign(new Error('There is no remaining stock to publish.'),{status:409});
+    const offerId=randomUUID();
+    db.prepare('INSERT INTO provider_market_offers(id,batch_id,opened_at,status) VALUES(?,?,?,?)').run(offerId,batchId,now.toISOString(),'OPEN');
+    db.prepare("UPDATE provider_batches SET status='LISTED',market_offer_id=? WHERE id=?").run(offerId,batchId);
+    return {batch:getProviderBatches(db).find(item=>item.id===batchId),offerId,publishedNow:true};
   });
 }
 
@@ -112,7 +128,7 @@ export function getNearbyListings(db) {
   const dynamic=db.prepare("SELECT b.*,o.id AS offer_id FROM provider_batches b JOIN provider_market_offers o ON o.id=b.market_offer_id WHERE o.status='OPEN' AND b.status='LISTED' ORDER BY o.opened_at DESC").all()
     .map(row=>{const b=providerInventory(db,row.id);return {id:`provider-${row.id}`,batchId:row.id,name:b.food_name,business:'Golden Crust Bakery',category:title(b.category),quantity:b.remainingQuantity,unit:b.unit,
       offerType:'discounted_sale',priceTry:Math.round(b.retail_price_try*(1-b.discount_percent/100)*100)/100,regularPriceTry:b.retail_price_try,discountPercent:b.discount_percent,location:b.pickup_location,lat:b.pickup_lat,lon:b.pickup_lon,
-      pickupUntil:b.pickup_deadline,note:`Automatically discounted ${b.discount_percent}% at ${String(Math.floor(b.closeout_minute/60)).padStart(2,'0')}:${String(b.closeout_minute%60).padStart(2,'0')} Istanbul time · demo POS inventory · ask the business to confirm product details.`,purchaseable:true};});
+      pickupUntil:b.pickup_deadline,note:`${b.discount_percent}% provider-set discount · demo POS inventory · ask the business to confirm product details.`,purchaseable:true};});
   return [...household,...getNearbyDemoListings(),...dynamic];
 }
 

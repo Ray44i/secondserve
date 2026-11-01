@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import OpenAI from 'openai';
 import { decodeMaskToSVGPath, parseImageStream, recordsOfKind } from '@meta-sam/parser';
 import { decodeImageDataUrl as decodeImageFromBytes, validateFactorySight as validateFactorySightData, validateInspectionFields } from './factorysight-validation.mjs';
-import { acceptOffer as secondServeAcceptOffer, cancelAcceptedOffer, createListing as secondServeCreateListing, createProviderBatch, declineOffer as secondServeDeclineOffer, dispatchOffer as secondServeDispatchOffer, getNearbyListings, getProviderBatches, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, purchaseProviderOffer, recordProviderSale, runDecisionAgent, runProviderEveningCloseout, verifyPickup } from './secondserve-domain.mjs';
+import { acceptOffer as secondServeAcceptOffer, cancelAcceptedOffer, createListing as secondServeCreateListing, createProviderBatch, declineOffer as secondServeDeclineOffer, dispatchOffer as secondServeDispatchOffer, getNearbyListings, getProviderBatches, getSecondServeState, initializeSecondServe, loadDemoScenario, markPickedUp, purchaseProviderOffer, recordProviderSale, releaseProviderBatchNow, runDecisionAgent, runProviderEveningCloseout, verifyPickup } from './secondserve-domain.mjs';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
 try {
@@ -437,6 +437,11 @@ async function secondServeRoute(request, response, url) {
     if (method === 'POST' && path === '/api/secondserve/provider/batches') {
       const actor=secondServeActor(request,['donor']),body=await readJson(request,8192);
       return sendJson(response,201,{batch:createProviderBatch(secondServeDb,body,actor.role),salesSource:'simulated POS feed'});
+    }
+    const providerReleaseRoute=path.match(/^\/api\/secondserve\/provider\/batches\/([^/]+)\/release-now$/);
+    if(method==='POST'&&providerReleaseRoute){
+      const actor=secondServeActor(request,['donor']);
+      return sendJson(response,200,releaseProviderBatchNow(secondServeDb,decodeURIComponent(providerReleaseRoute[1]),actor.role));
     }
     const providerSaleRoute=path.match(/^\/api\/secondserve\/provider\/batches\/([^/]+)\/sales$/);
     if(method==='POST'&&providerSaleRoute){
