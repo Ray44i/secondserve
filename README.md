@@ -16,6 +16,8 @@ Open <http://127.0.0.1:4173>. The SQLite demo database is created under ignored 
 
 ## Demo workflow
 
+For a timed presentation, see [HACKATHON_DEMO_SCRIPT.md](HACKATHON_DEMO_SCRIPT.md).
+
 1. Choose **Provider** and create a morning batch. If demonstrating Meta AI, select a food photo, review the consent text, check consent, and explicitly click **Identify product & estimate count**. Review or correct the draft; AI does not verify the full batch or food-safety facts.
 2. Enter price, discount, pickup deadline, handling/date/allergen facts, confirm the provider attestation, and start the batch.
 3. Record a simulated POS sale. The provider ledger shows remaining units. Use **Publish remaining stock now** for a live demo, or let the local scheduler publish at the chosen closeout time.
