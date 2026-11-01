@@ -26,9 +26,15 @@ Open <http://127.0.0.1:4173>. The SQLite demo database is created under ignored 
 
 Offers and partner registry data are simulated; no outside organizations are contacted.
 
-## Meta Muse Spark intake
+## Meta Muse Spark tooling
 
-Set `MODEL_API_KEY` in local `.env` and `SECONDSERVE_MODEL_ENABLED=true`. The optional intake action sends the note entered by the user to Meta Muse Spark and returns a structured **draft**. It never creates a listing or offer. Review every field; missing dates, handling conditions, allergens, and safety facts must remain unknown until a human confirms them. No other model request is made implicitly.
+Set `MODEL_API_KEY` in local `.env` and `SECONDSERVE_MODEL_ENABLED=true`. SecondServe uses Muse Spark in three explicit, bounded steps:
+
+- **Structured text intake:** a donor can ask Muse Spark to extract only facts stated in a business note. It creates an editable draft, never a listing or offer.
+- **Multimodal photo intake:** after choosing an image, the donor must check consent and click Analyze. The browser resizes the image before sending it to Meta. The model suggests only a visible food identity and presentation; it cannot establish quantity, ingredients, allergens, freshness, handling, safety, or eligibility. It creates an editable draft only.
+- **Coordinator brief:** after deterministic eligibility checks, a coordinator may ask Muse Spark to explain the already-computed result and suggest questions to verify. It cannot change scores, recommend excluded recipients, release a safety hold, or dispatch an offer.
+
+No model request is made implicitly. Every generated result is advisory and must be reviewed by a person. Requests may consume Meta Model API credits. The app sends the text or resized image only after the corresponding explicit action. Never commit `.env` or publish API keys.
 
 ## Data and safety boundaries
 
@@ -37,7 +43,7 @@ Set `MODEL_API_KEY` in local `.env` and `SECONDSERVE_MODEL_ENABLED=true`. The op
 - Food-finder profiles are stored in this browser only. The neighborhood sets an approximate map center; the address field is a private note and is not used for routing.
 - Nearby businesses, products, prices, pickup windows, recipient records, verification badges, coordinates, capacity, and availability are fictional demo fixtures. OpenStreetMap provides real map tiles, but there is no live business inventory, geocoder, or booking flow. Location sorting is approximate; the location is kept in the current tab.
 - Notifications are simulated. No recipient receives an actual email, SMS, or push message.
-- Photos and image-based food inspection are not implemented. The intake model is text-only.
+- Food-photo suggestions and coordinator briefs are AI-generated and can be wrong; neither is a safety inspection or an authority for handling decisions.
 - Split allocation requires coordinator review.
 - Rules are conservative product heuristics, not legal, food-safety, or regulatory certification. A qualified business/coordinator remains responsible for applicable local requirements and handoff.
 - Impact shows food quantities grouped by unit and verified pickup count. It does not estimate emissions or claim waste avoided without a defensible baseline.
@@ -48,4 +54,4 @@ Run `npm test` for the domain, safety-gate, matching, reservation, cancellation,
 
 ## Hackathon fit
 
-The supplied judging rubric weights Impact 30%, Meta AI tooling 25%, Demo 25%, Technical depth 20%. SecondServe demonstrates a complete, reviewable rescue-state workflow, uses Muse Spark for optional structured intake, explains safety holds, and keeps verified impact auditable. It is a prototype; the limitations above should be stated in the demo rather than hidden.
+The supplied judging rubric weights Impact 30%, Meta AI tooling 25%, Demo 25%, Technical depth 20%. SecondServe demonstrates an end-to-end simulated rescue and uses Muse Spark for structured text extraction, consented multimodal image understanding, and a coordinator brief grounded in deterministic match results. Keep the demo centered on those bounded model roles, human review, recovery after cancellation, and verified pickup impact. It is a prototype; state the limitations above clearly.

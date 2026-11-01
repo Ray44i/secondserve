@@ -2,7 +2,7 @@ import { DEMO_CENTER, NEIGHBORHOODS, recommendFoodListings } from './secondserve
 const $ = (id) => document.getElementById(id);
 const savedSession = (() => { try { return JSON.parse(sessionStorage.getItem('secondserve.demo.session') || '{}'); } catch { return {}; } })();
 const savedProfile = (() => { try { return JSON.parse(localStorage.getItem('secondserve.food.profile') || 'null'); } catch { return null; } })();
-const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null };
+const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null, foodPhotoDataUrl:'' };
 const roleNames = { neighbor:'Food seeker', donor: 'Food business', coordinator: 'Rescue coordinator', recipient: 'Recipient partner' };
 if(state.profile){state.userLocation=NEIGHBORHOODS[state.profile.neighborhood]?.lat?{lat:NEIGHBORHOODS[state.profile.neighborhood].lat,lon:NEIGHBORHOODS[state.profile.neighborhood].lon}:DEMO_CENTER;state.locationSource='profile';}
 $('marketRadius').value=String(state.radiusKm);
@@ -68,6 +68,9 @@ function render(d) {
   if(state.role==='coordinator') $('impactNote').textContent='Reported food and accepted offers are separate from verified rescued food. Nothing counts as rescued until pickup quantity is verified.';
 }
 function renderGates(item,d,offer) {
+  const brief=$('museBrief'), briefKey=item?`${item.id}:${item.status}:${d.matches?.length||0}`:'';
+  if(brief.dataset.key!==briefKey){brief.dataset.key=briefKey;brief.replaceChildren();brief.hidden=true;}
+  $('askMuseBrief').hidden=!(state.model&&state.role==='coordinator'&&item&&['MATCHING','NEEDS_REVIEW'].includes(item.status));
   const needs= item.status==='NEEDS_REVIEW';
   const validAttest=Boolean(item.attested);
   const validDate=item.expiryType!=='unknown'&&item.storage!=='unknown'&&!(item.expiryType==='use_by'&&item.expiryAt&&Date.parse(item.expiryAt)<=Date.now());
@@ -195,6 +198,18 @@ $('switchRole').onclick=()=>{state.token='';state.role='';state.organizationId='
 $('loadScenario').onclick=()=>doAction('/api/secondserve/demo/load',{scenario:$('scenario').value});
 $('runAgent').onclick=()=>doAction('/api/secondserve/agent/run');
 $('dispatchOffer').onclick=()=>doAction('/api/secondserve/offers/dispatch');
+$('askMuseBrief').onclick=async()=>{
+  const button=$('askMuseBrief');button.disabled=true;$('museBrief').hidden=true;button.textContent='Preparing advisory brief…';
+  try {
+    const result=await request('/api/secondserve/brief',{method:'POST',body:{}}),host=$('museBrief'),brief=result.brief;
+    const heading=document.createElement('b');heading.textContent=`Muse Spark coordinator brief · ${result.model} · advisory only`;host.replaceChildren(heading);
+    const summary=document.createElement('p');summary.textContent=brief.summary;host.append(summary);
+    const priority=document.createElement('p');priority.textContent=`Priority: ${brief.priority}`;host.append(priority);
+    for(const [label,values] of [['Questions to verify',brief.questions],['Considerations',brief.considerations]])if(values.length){const title=document.createElement('small');title.textContent=label;host.append(title);const list=document.createElement('ul');for(const value of values){const li=document.createElement('li');li.textContent=value;list.append(li);}host.append(list);}
+    const note=document.createElement('small');note.textContent='Muse Spark cannot change eligibility, resolve a safety hold, or send an offer. Coordinator review remains required.';host.append(note);host.hidden=false;
+  }catch(e){toast(e.message);}
+  finally{button.disabled=false;button.textContent='Ask Muse Spark for a coordinator brief';}
+};
 $('listingForm').addEventListener('submit',async(event)=>{
   event.preventDefault(); if(state.role!=='donor')return;
   const dateType=$('expiryType').value, date=$('expiryDate').value;
@@ -221,11 +236,44 @@ $('parseNote').onclick=async()=>{
     $('intakeStatus').textContent=`Draft from ${result.model}. Missing: ${d.missingFacts.join(', ')||'none stated'}. Check facts, set pickup time, attest, then submit.`;toast('AI draft filled only explicit facts. Please review and correct it.');
   }catch(e){$('intakeStatus').textContent=e.message;toast(e.message);}
 };
+$('foodPhoto').onchange=async()=>{
+  const file=$('foodPhoto').files?.[0]; state.foodPhotoDataUrl=''; $('foodPhotoPreview').hidden=true; updateVisionButton();
+  if(!file){$('visionStatus').textContent='Nothing is sent until you select a photo, check consent, and click Analyze.';return;}
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){ $('visionStatus').textContent='Choose a JPEG, PNG, or WebP image.'; $('foodPhoto').value='';return; }
+  if(file.size>12*1024*1024){$('visionStatus').textContent='Choose a photo under 12 MB so it can be resized in your browser.';$('foodPhoto').value='';return;}
+  $('visionStatus').textContent='Preparing a smaller preview in this browser…';
+  try {
+    const source=await createImageBitmap(file), scale=Math.min(1,1536/Math.max(source.width,source.height)), canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(source.width*scale));canvas.height=Math.max(1,Math.round(source.height*scale));
+    canvas.getContext('2d',{alpha:false}).drawImage(source,0,0,canvas.width,canvas.height);source.close();
+    const blob=await new Promise((resolve,reject)=>canvas.toBlob(result=>result?resolve(result):reject(new Error('Could not resize this photo.')),'image/jpeg',.78));
+    if(blob.size>3*1024*1024)throw new Error('The resized photo is still too large. Choose a smaller image.');
+    state.foodPhotoDataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Could not read this photo.'));reader.readAsDataURL(blob);});
+    $('foodPhotoPreview').src=state.foodPhotoDataUrl;$('foodPhotoPreview').hidden=false;$('visionStatus').textContent=`Resized preview ready (${fmtNum(blob.size/1024)} KB). Not sent yet.`;
+  }catch(e){state.foodPhotoDataUrl='';$('visionStatus').textContent=e.message;}
+  updateVisionButton();
+};
+$('visionConsent').onchange=updateVisionButton;
+$('analyzeFoodPhoto').onclick=async()=>{
+  if(!state.model||!state.foodPhotoDataUrl||!$('visionConsent').checked)return;
+  $('analyzeFoodPhoto').disabled=true;$('visionStatus').textContent='Sending the resized photo to Meta Muse Spark. It may use credits; please verify every suggestion.';
+  try {
+    const result=await request('/api/secondserve/intake/vision',{method:'POST',body:{consent:true,dataUrl:state.foodPhotoDataUrl}}),d=result.draft;
+    if(d.foodName&&d.foodName.toLowerCase()!=='unknown')$('foodName').value=d.foodName;
+    $('foodCategory').value=d.category==='unknown'?'other':d.category;
+    const note=$('businessNote').value.trim();
+    $('businessNote').value=[note,`[Muse Spark visual draft — verify] ${d.visibleDescription}`,`Uncertainty: ${d.uncertainty}.`, `Still needs business confirmation: ${d.missingFacts.join(', ')}.`].filter(Boolean).join('\n');
+    $('visionStatus').textContent=`Draft from ${result.model}; not safety-verified. ${d.missingFacts.join(' · ')}`;
+    toast('Photo draft added. Confirm all listing facts yourself.');
+  }catch(e){$('visionStatus').textContent=e.message;toast(e.message);}
+  finally{updateVisionButton();}
+};
+function updateVisionButton(){const button=$('analyzeFoodPhoto');if(button)button.disabled=!state.model||!state.foodPhotoDataUrl||!$('visionConsent')?.checked||state.busy;}
 $('expiryType').onchange=()=>{const value=$('expiryType').value;$('expiryDateWrap').hidden=['unknown','not_applicable'].includes(value);};
 function localDateTimeInput(date) {const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);return local.toISOString().slice(0,16);}
 const now=new Date();$('pickupDeadline').value=localDateTimeInput(new Date(now.getTime()+75*60000));$('preparedAt').value=localDateTimeInput(new Date(now.getTime()-120*60000));
 async function boot() {
-  try {const status=await request('/api/secondserve/status',{auth:false});state.model=Boolean(status.modelEnabled);$('modelStatus').innerHTML=`<i></i> ${state.model?'Muse Spark · opt-in draft':'Muse Spark disabled'}`;$('modelStatus').classList.toggle('ready',state.model);$('parseNote').disabled=!state.model;}
+  try {const status=await request('/api/secondserve/status',{auth:false});state.model=Boolean(status.modelEnabled);$('modelStatus').innerHTML=`<i></i> ${state.model?'Muse Spark · opt-in tools':'Muse Spark disabled'}`;$('modelStatus').classList.toggle('ready',state.model);$('parseNote').disabled=!state.model;updateVisionButton();}
   catch {$('modelStatus').textContent='Server unavailable';}
   try {state.data=await request('/api/secondserve/state');} catch(e) {toast(e.message);return;}
   await loadMarketplace();
