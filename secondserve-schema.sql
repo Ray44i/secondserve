@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS surplus_listings (
   allergens TEXT NOT NULL, food_condition TEXT NOT NULL,
   pickup_deadline TEXT NOT NULL, pickup_window_start TEXT, pickup_window_end TEXT,
   strategy_preference TEXT NOT NULL, business_attested INTEGER NOT NULL,
-  status TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+  status TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+  photo_data_url TEXT
 );
 CREATE TABLE IF NOT EXISTS matches (
   id TEXT PRIMARY KEY, listing_id TEXT NOT NULL REFERENCES surplus_listings(id) ON DELETE CASCADE,

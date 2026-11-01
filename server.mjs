@@ -448,7 +448,7 @@ async function secondServeRoute(request, response, url) {
       return sendJson(response, 200, loadDemoScenario(secondServeDb, body.scenario || 'recovery'));
     }
     if (method === 'POST' && path === '/api/secondserve/listings') {
-      const actor = secondServeActor(request, ['donor','neighbor']), body = await readJson(request, 12000);
+      const actor = secondServeActor(request, ['donor','neighbor']), body = await readJson(request, 2_200_000);
       return sendJson(response, 201, secondServeCreateListing(secondServeDb, body, actor.role==='neighbor'?'household':actor.role));
     }
     if (method === 'POST' && path === '/api/secondserve/intake/parse') {

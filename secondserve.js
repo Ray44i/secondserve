@@ -3,7 +3,7 @@ const $ = (id) => document.getElementById(id);
 const savedSession = (() => { try { return JSON.parse(sessionStorage.getItem('secondserve.demo.session') || '{}'); } catch { return {}; } })();
 if(savedSession.role==='household'){sessionStorage.removeItem('secondserve.demo.session');savedSession.token='';savedSession.role='';}
 const savedProfile = (() => { try { return JSON.parse(localStorage.getItem('secondserve.food.profile') || 'null'); } catch { return null; } })();
-const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null, foodPhotoDataUrl:'',batchPhotoDataUrl:'',providerBatches:[],activeProviderBatch:null };
+const state = { token: savedSession.token || '', role: savedSession.role || '', organizationId: savedSession.organizationId || '', data: null, model: false, busy: false, view:'nearby', listings:[], offerFilter:'all', categoryFilter:'all', radiusKm:Number(savedProfile?.radiusKm||10), userLocation:null, locationSource:'demo', profile:savedProfile, marketMap:null, marketMarkers:[], userMarker:null, foodPhotoDataUrl:'',householdPhotoDataUrl:'',batchPhotoDataUrl:'',providerBatches:[],activeProviderBatch:null };
 const roleNames = { neighbor:'User', donor:'Provider', coordinator:'Admin', recipient:'Recipient partner' };
 const marketCategories = [
   { value:'Bakery',label:'Bakery & bread',icon:'♨' },{ value:'Produce',label:'Fruit & veg',icon:'✿' },
@@ -25,13 +25,13 @@ async function request(path, {method='GET',body,auth=true}={}) {
   if(!response.ok) throw new Error(result.error||`Request failed (${response.status}).`);
   return result;
 }
-function showLogin() { $('loginScreen').hidden=false; $('appShell').hidden=true; $('loginOrgWrap').hidden=true; }
+function showLogin() { $('welcomeScreen').hidden=true; $('loginScreen').hidden=false; $('appShell').hidden=true; $('loginOrgWrap').hidden=true; }
 async function login(role) {
   try {
     const body={role}; if(role==='recipient') body.organizationId=$('loginOrg').value;
     const result=await request('/api/secondserve/session',{method:'POST',body,auth:false});
     state.token=result.token; state.role=result.role; state.organizationId=result.organizationId||''; sessionStorage.setItem('secondserve.demo.session',JSON.stringify({token:state.token,role:state.role,organizationId:state.organizationId}));
-    $('loginScreen').hidden=true; $('appShell').hidden=false; $('roleLabel').textContent=roleNames[state.role]+(state.organizationId?` · ${orgName(state.organizationId)}`:'');
+    $('welcomeScreen').hidden=true; $('loginScreen').hidden=true; $('appShell').hidden=false; $('roleLabel').textContent=roleNames[state.role]+(state.organizationId?` · ${orgName(state.organizationId)}`:'');
     setView(role==='neighbor'?'nearby':role==='donor'?'provider':'operations');
     await refresh();
     if(role==='neighbor') await loadMarketplace();
@@ -174,7 +174,7 @@ function renderMarketplace(){
     const price=item.offerType==='donation'?'FREE':`${fmtNum(item.priceTry)} ₺`;
     const pickLabel=item.recommended?`<div class="recommendation-badge">✦ RECOMMENDED FOR YOU · ${safe(item.recommendationReason)}</div>`:'';
     const category=marketCategories.find(value=>value.value===item.category);
-    card.innerHTML=`<div>${pickLabel}<div class="market-card-labels"><span class="category-pill"><i aria-hidden="true">${category?.icon||'•'}</i>${safe(category?.label||item.category)}</span><span class="market-type ${item.offerType==='discounted_sale'?'discount':''}">${item.offerType==='donation'?'FREE DONATION':item.discountPercent?`${item.discountPercent}% OFF`:'DISCOUNTED'}</span></div><h3>${safe(item.name)}</h3><div class="market-business">${safe(item.business)}</div><p>${safe(item.note)}</p></div><div class="market-price">${price}<small>${item.regularPriceTry?`WAS ${fmtNum(item.regularPriceTry)} ₺`:(item.offerType==='donation'?'NO COST':'DEMO PRICE')}</small></div><div class="market-card-foot"><span><b>${fmtNum(item.quantity)} ${safe(item.unit)}</b> left</span><span>${safe(item.location)}</span><span><b>${item.distanceKm.toFixed(1)} km</b> approx.</span><span>Pickup by ${when(item.pickupUntil)}</span></div>`;
+    card.innerHTML=`<div>${item.photoDataUrl?`<img class="market-photo-preview" src="${safe(item.photoDataUrl)}" alt="Photo of ${safe(item.name)}" loading="lazy">`:''}${pickLabel}<div class="market-card-labels"><span class="category-pill"><i aria-hidden="true">${category?.icon||'•'}</i>${safe(category?.label||item.category)}</span><span class="market-type ${item.offerType==='discounted_sale'?'discount':''}">${item.offerType==='donation'?'FREE DONATION':item.discountPercent?`${item.discountPercent}% OFF`:'DISCOUNTED'}</span></div><h3>${safe(item.name)}</h3><div class="market-business">${safe(item.business)}</div><p>${safe(item.note)}</p></div><div class="market-price">${price}<small>${item.regularPriceTry?`WAS ${fmtNum(item.regularPriceTry)} ₺`:(item.offerType==='donation'?'NO COST':'DEMO PRICE')}</small></div><div class="market-card-foot"><span><b>${fmtNum(item.quantity)} ${safe(item.unit)}</b> left</span><span>${safe(item.location)}</span><span><b>${item.distanceKm.toFixed(1)} km</b> approx.</span><span>Pickup by ${when(item.pickupUntil)}</span></div>`;
     if(item.purchaseable&&state.role==='neighbor'){
       const buy=document.createElement('div');buy.className='quick-buy';const quantity=document.createElement('input');quantity.type='number';quantity.min='1';quantity.step='1';quantity.max=String(item.quantity);quantity.value='1';quantity.setAttribute('aria-label',`Quantity of ${item.name} to buy for pickup`);
       const action=document.createElement('button');action.className='button primary';action.type='button';action.textContent='Buy for pickup · demo';action.title='Simulated purchase only; no payment is taken.';
@@ -225,6 +225,8 @@ async function loadMarketplace(){
   catch(error){$('marketList').innerHTML=`<div class="empty-state">Could not load listings: ${safe(error.message)}</div>`;}
 }
 document.querySelectorAll('.sidebar nav a[data-view]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();setView(link.dataset.view);if(link.dataset.view==='operations'&&link.hash)document.querySelector(link.hash)?.scrollIntoView({behavior:'smooth'});}));
+$('enterWorkspace').onclick=()=>{ $('welcomeScreen').hidden=true; $('loginScreen').hidden=false; window.scrollTo({top:0,behavior:'smooth'}); };
+$('backToWelcome').onclick=()=>{ $('loginScreen').hidden=true; $('welcomeScreen').hidden=false; window.scrollTo({top:0,behavior:'smooth'}); };
 document.querySelectorAll('[data-offer-filter]').forEach(button=>button.addEventListener('click',()=>{state.offerFilter=button.dataset.offerFilter;document.querySelectorAll('[data-offer-filter]').forEach(item=>item.classList.toggle('active',item===button));renderMarketplace();}));
 $('marketRadius').onchange=event=>{state.radiusKm=Number(event.target.value);renderMarketplace();};
 $('mapShowAll').onclick=fitMarketPins;
@@ -251,10 +253,21 @@ $('switchRole').onclick=()=>{state.token='';state.role='';state.organizationId='
 $('shareFood').onclick=()=>{
   if(state.role!=='neighbor'){toast('Choose the User role to share a free household donation.');return;}
   $('householdDonationForm').reset();
+  state.householdPhotoDataUrl='';$('homeFoodPhotoPreview').hidden=true;$('homeFoodPhotoStatus').textContent='No photo selected.';
   $('homeDonationStatus').textContent='No details are shared until you submit.';
   $('homeExpiryDateWrap').hidden=true;$('homeExpiryDate').required=false;
   $('homePickupLocation').value=state.profile?.neighborhood||'';
   $('householdDonationDialog').showModal();
+};
+$('homeFoodPhoto').onchange=async()=>{
+  const file=$('homeFoodPhoto').files?.[0];state.householdPhotoDataUrl='';$('homeFoodPhotoPreview').hidden=true;
+  if(!file){$('homeFoodPhotoStatus').textContent='No photo selected.';return;}
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>12*1024*1024){$('homeFoodPhotoStatus').textContent='Choose a JPEG, PNG, or WebP photo under 12 MB.';$('homeFoodPhoto').value='';return;}
+  $('homeFoodPhotoStatus').textContent='Compressing photo in this browser…';
+  try{const bitmap=await createImageBitmap(file),scale=Math.min(1,1280/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));canvas.getContext('2d',{alpha:false}).drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
+    const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('Could not compress this photo.')),'image/jpeg',.72));if(blob.size>1_500_000)throw new Error('Compressed photo is too large. Try a smaller image.');
+    state.householdPhotoDataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Could not read this photo.'));reader.readAsDataURL(blob);});$('homeFoodPhotoPreview').src=state.householdPhotoDataUrl;$('homeFoodPhotoPreview').hidden=false;$('homeFoodPhotoStatus').textContent=`Photo attached (${fmtNum(blob.size/1024)} KB). It will appear on the nearby demo board.`;
+  }catch(error){state.householdPhotoDataUrl='';$('homeFoodPhotoStatus').textContent=error.message;}
 };
 $('closeHouseholdDonation').onclick=$('cancelHouseholdDonation').onclick=()=>$('householdDonationDialog').close();
 $('homeExpiryType').onchange=()=>{const applicable=$('homeExpiryType').value!=='not_applicable';$('homeExpiryDateWrap').hidden=!applicable;$('homeExpiryDate').required=applicable;};
@@ -264,7 +277,7 @@ $('householdDonationForm').onsubmit=async event=>{
   const body={foodName:$('homeFoodName').value.trim(),category:$('homeCategory').value,quantity:Number($('homeQuantity').value),unit:$('homeUnit').value,
     preparedAt:preparedValue?new Date(preparedValue).toISOString():null,expiryType,expiryAt:expiryType==='use_by'&&expiryDate?new Date(`${expiryDate}T23:59:00`).toISOString():null,
     bestBeforeAt:expiryType==='best_before'&&expiryDate?new Date(`${expiryDate}T23:59:00`).toISOString():null,storage:$('homeStorage').value,allergens:$('homeAllergens').value.trim(),
-    condition:$('homeCondition').value,pickupDeadline:pickupValue?new Date(pickupValue).toISOString():'',pickupLocation:area?.label||'',preference:'donation',attested:$('homeAttested').checked,
+    condition:$('homeCondition').value,pickupDeadline:pickupValue?new Date(pickupValue).toISOString():'',pickupLocation:area?.label||'',preference:'donation',attested:$('homeAttested').checked,photoDataUrl:state.householdPhotoDataUrl||null,
     pickupLat:area?.lat??null,pickupLon:area?.lon??null};
   const submit=event.submitter;submit.disabled=true;$('homeDonationStatus').textContent='Posting the free offer to this local demo…';
   try{await request('/api/secondserve/listings',{method:'POST',body});$('householdDonationDialog').close();await loadMarketplace();toast('Free donation posted to the local nearby demo. Partner pickup is simulated; no real people are notified.');}
@@ -397,7 +410,7 @@ async function boot() {
   catch {$('modelStatus').textContent='Server unavailable';}
   try {state.data=await request('/api/secondserve/state');} catch(e) {toast(e.message);return;}
   await loadMarketplace();
-  if(state.token&&state.role){try{render(state.data);$('loginScreen').hidden=true;$('appShell').hidden=false;$('roleLabel').textContent=roleNames[state.role]+(state.organizationId?` · ${orgName(state.organizationId)}`:'');setView(state.role==='neighbor'?'nearby':state.role==='donor'?'provider':'operations');if(state.role==='donor')await loadProviderBatches();}catch{showLogin();}}
+  if(state.token&&state.role){try{render(state.data);$('welcomeScreen').hidden=true;$('loginScreen').hidden=true;$('appShell').hidden=false;$('roleLabel').textContent=roleNames[state.role]+(state.organizationId?` · ${orgName(state.organizationId)}`:'');setView(state.role==='neighbor'?'nearby':state.role==='donor'?'provider':'operations');if(state.role==='donor')await loadProviderBatches();}catch{showLogin();}}
 }
 // Keep the buyer board and provider ledger fresh while a demo role is open.
 setInterval(()=>{

@@ -108,7 +108,7 @@ export function getNearbyListings(db) {
   const title=category=>({bakery:'Bakery',produce:'Produce',dairy:'Dairy',prepared_meals:'Prepared meals',pantry:'Pantry',other:'Other'}[category]||category);
   const household=db.prepare(`SELECT * FROM surplus_listings WHERE business_id='household-community' AND strategy_preference='donation' AND status='AVAILABLE' AND pickup_deadline>? ORDER BY created_at DESC`).all(nowIso())
     .map(row=>({id:`household-${row.id}`,name:row.food_name,business:'Community donor',category:title(row.category),quantity:row.quantity,unit:row.unit,offerType:'donation',priceTry:null,
-      location:row.pickup_location,lat:row.pickup_lat,lon:row.pickup_lon,pickupUntil:row.pickup_deadline,note:'Free household donation · donor-declared details · partner handoff is simulated in this local demo.',householdDonation:true}));
+      location:row.pickup_location,lat:row.pickup_lat,lon:row.pickup_lon,pickupUntil:row.pickup_deadline,note:'Free household donation · donor-declared details · partner handoff is simulated in this local demo.',householdDonation:true,photoDataUrl:row.photo_data_url||null}));
   const dynamic=db.prepare("SELECT b.*,o.id AS offer_id FROM provider_batches b JOIN provider_market_offers o ON o.id=b.market_offer_id WHERE o.status='OPEN' AND b.status='LISTED' ORDER BY o.opened_at DESC").all()
     .map(row=>{const b=providerInventory(db,row.id);return {id:`provider-${row.id}`,batchId:row.id,name:b.food_name,business:'Golden Crust Bakery',category:title(b.category),quantity:b.remainingQuantity,unit:b.unit,
       offerType:'discounted_sale',priceTry:Math.round(b.retail_price_try*(1-b.discount_percent/100)*100)/100,regularPriceTry:b.retail_price_try,discountPercent:b.discount_percent,location:b.pickup_location,lat:b.pickup_lat,lon:b.pickup_lon,
@@ -132,6 +132,8 @@ export function purchaseProviderOffer(db, batchId, quantity, now = new Date()) {
 
 export function initializeSecondServe(db, schemaSql) {
   db.exec(schemaSql);
+  const listingColumns=db.prepare('PRAGMA table_info(surplus_listings)').all();
+  if(!listingColumns.some(column=>column.name==='photo_data_url'))db.exec('ALTER TABLE surplus_listings ADD COLUMN photo_data_url TEXT');
   const batchColumns=db.prepare('PRAGMA table_info(provider_batches)').all();
   if(!batchColumns.some(column=>column.name==='closeout_minute'))db.exec('ALTER TABLE provider_batches ADD COLUMN closeout_minute INTEGER NOT NULL DEFAULT 1260');
   db.exec('PRAGMA foreign_keys = ON;');
@@ -175,8 +177,8 @@ function insertListing(db, fields, sourceRole = 'donor') {
   const businessId=sourceRole==='household'?'household-community':'golden-crust';
   const businessLocation = db.prepare('SELECT lat,lon FROM organizations WHERE id=?').get(businessId);
   const pickupLat=fields.pickupLat??businessLocation.lat,pickupLon=fields.pickupLon??businessLocation.lon;
-  db.prepare(`INSERT INTO surplus_listings(id,business_id,food_name,category,quantity,unit,pickup_location,pickup_lat,pickup_lon,prepared_at,expiry_type,expiry_at,best_before_at,storage_condition,allergens,food_condition,pickup_deadline,pickup_window_start,pickup_window_end,strategy_preference,business_attested,status,created_at,updated_at)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, businessId, fields.foodName, fields.category, fields.quantity, fields.unit, fields.pickupLocation || 'Kadıköy, Istanbul', pickupLat, pickupLon, fields.preparedAt ?? null, fields.expiryType, fields.expiryAt ?? null, fields.bestBeforeAt ?? null, fields.storage, fields.allergens, fields.condition, fields.pickupDeadline, fields.pickupWindowStart ?? null, fields.pickupDeadline, fields.preference, fields.attested ? 1 : 0, 'AVAILABLE', now, now);
+  db.prepare(`INSERT INTO surplus_listings(id,business_id,food_name,category,quantity,unit,pickup_location,pickup_lat,pickup_lon,prepared_at,expiry_type,expiry_at,best_before_at,storage_condition,allergens,food_condition,pickup_deadline,pickup_window_start,pickup_window_end,strategy_preference,business_attested,status,created_at,updated_at,photo_data_url)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, businessId, fields.foodName, fields.category, fields.quantity, fields.unit, fields.pickupLocation || 'Kadıköy, Istanbul', pickupLat, pickupLon, fields.preparedAt ?? null, fields.expiryType, fields.expiryAt ?? null, fields.bestBeforeAt ?? null, fields.storage, fields.allergens, fields.condition, fields.pickupDeadline, fields.pickupWindowStart ?? null, fields.pickupDeadline, fields.preference, fields.attested ? 1 : 0, 'AVAILABLE', now, now, fields.photoDataUrl ?? null);
   db.prepare('INSERT INTO app_meta(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('activeListingId', id);
   return id;
 }
@@ -207,7 +209,7 @@ export function createListing(db, raw, role = 'donor') {
     storage: raw.storage || 'unknown', allergens: String(raw.allergens ?? 'Unknown').trim(),
     condition: raw.condition || 'unknown', pickupDeadline: raw.pickupDeadline,
     pickupLocation: String(raw.pickupLocation ?? '').trim(), pickupWindowStart: raw.pickupWindowStart || null, preference: household?'donation':raw.preference || 'donation',
-    pickupLat:raw.pickupLat==null?null:Number(raw.pickupLat),pickupLon:raw.pickupLon==null?null:Number(raw.pickupLon),
+    pickupLat:raw.pickupLat==null?null:Number(raw.pickupLat),pickupLon:raw.pickupLon==null?null:Number(raw.pickupLon),photoDataUrl:raw.photoDataUrl||null,
     attested: raw.attested === true
   };
   if (!fields.foodName || fields.foodName.length > 80 || !['bakery','produce','dairy','prepared_meals','pantry','other'].includes(fields.category)
@@ -218,6 +220,7 @@ export function createListing(db, raw, role = 'donor') {
     || !['reported_intact','damaged','unknown'].includes(fields.condition)
     || !['donation','discounted_sale','split'].includes(fields.preference) || !fields.pickupLocation || fields.pickupLocation.length > 160
     || fields.allergens.length > 240 || !Number.isFinite(Date.parse(fields.pickupDeadline))
+    || (fields.photoDataUrl!==null&&(typeof fields.photoDataUrl!=='string'||fields.photoDataUrl.length>2_100_000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(fields.photoDataUrl)))
     || (household&&(!fields.attested||fields.storage==='unknown'||fields.condition!=='reported_intact'||fields.expiryType==='unknown'||!fields.allergens||fields.allergens.toLowerCase()==='unknown'))
     || (fields.pickupLat!==null&&(!Number.isFinite(fields.pickupLat)||Math.abs(fields.pickupLat)>90))
     || (fields.pickupLon!==null&&(!Number.isFinite(fields.pickupLon)||Math.abs(fields.pickupLon)>180))
