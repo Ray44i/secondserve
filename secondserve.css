@@ -274,5 +274,7 @@
 .brand small{font-size:6.5px;letter-spacing:.13em}
 .welcome-top .brand-mark,.login-panel>.brand .brand-mark{width:58px;height:58px;flex-basis:58px}
 .welcome-top .brand-mark svg,.login-panel>.brand .brand-mark svg{width:51px;height:51px}
+.welcome-top .brand-copy{color:#203e2e!important}
+.welcome-top .brand-word>b{color:#203e2e!important}
 @keyframes brand-route-draw{to{stroke-dashoffset:0}}
 @media(prefers-reduced-motion:reduce){.brand-mark .mark-route,.brand-mark .mark-sprout,.brand-mark .mark-seed{animation:none!important;stroke-dashoffset:0!important}.brand:hover .brand-mark{transform:none}}

@@ -135,7 +135,7 @@ function renderOffer(item,offer) {
     action('Report pickup','primary',()=>doAction(`${listingPath}/pickup`,{quantity:Number(qty.value)}));
   }
   if(['coordinator','donor'].includes(state.role)&&offer.status==='PICKED_UP'){
-    const pickup=d.pickups?.find(p=>p.offerId===offer.id); const amount=pickup?.reportedQuantity ?? offer.quantity;
+    const pickup=state.data.pickups?.find(p=>p.offerId===offer.id); const amount=pickup?.reportedQuantity ?? offer.quantity;
     const qty=document.createElement('input');qty.type='number';qty.min='0.1';qty.step='any';qty.max=String(amount);qty.value=String(amount);qty.setAttribute('aria-label','Verified pickup quantity');qty.className='pickup-quantity';actions.append(qty);
     action('Verify quantity & complete rescue','primary',()=>doAction(`${listingPath}/verify`,{quantity:Number(qty.value)}));
   }

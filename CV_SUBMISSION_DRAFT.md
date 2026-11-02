@@ -29,7 +29,7 @@ Meta Muse Spark (opt-in multimodal and structured-text assistance), Node.js, SQL
 ## Links
 
 - Public source repository: <https://github.com/Ray44i/tremoroom>
-- Demo video: **Add the reviewed 3-minute video URL after recording and upload.**
+- Demo video: upload `SecondServe-3-minute-demo.mp4` from the project root to the hackathon submission form.
 
 ## Claims to avoid
 
