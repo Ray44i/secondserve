@@ -42,7 +42,7 @@
 
 ### 2:35–3:00 — Impact and close
 
-**Show:** Impact summary and the public GitHub repository.
+**Show:** The new four-step impact journey, the verified impact ledger, and the public GitHub repository. Point out that the local demo data is simulated and that the ledger only counts quantities after pickup is verified.
 
 **Say:** “The goal is to make surplus measurable and recoverable, from provider inventory to verified handoff. This prototype demonstrates that workflow with opt-in Meta AI assistance, deterministic inventory rules, and a human-confirmed rescue process. Thank you.”
 
