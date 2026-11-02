@@ -252,3 +252,27 @@
 @keyframes sprout-nod{0%,86%,100%{transform:rotate(0)}91%{transform:rotate(-7deg)}96%{transform:rotate(5deg)}}
 @keyframes seed-glow{0%,100%{transform:scale(1);filter:drop-shadow(0 0 0 #e9915500)}50%{transform:scale(1.12);filter:drop-shadow(0 0 4px #e991557a)}}
 @media(prefers-reduced-motion:reduce){.brand-mark,.brand-mark .mark-sprout,.brand-mark .mark-seed,.map-price-pin,.market-card,.map-popup-visual>span:not(.map-popup-badge),.basket-row,.checkout-dialog[open],.checkout-dialog[open]::backdrop,.receipt-mark,.toast.show,.sidebar-nav a .nav-icon{animation:none!important;transition:none!important}}
+
+/* A food-rescue emblem: a shared bowl inside a circular second-chance route. */
+.brand-mark{position:relative;isolation:isolate;width:54px;height:54px;flex-basis:54px;border:1px solid #f8fff0a8;border-radius:19px;background:radial-gradient(circle at 24% 15%,#fff5d7 0,#daedbd 36%,#8dc49c 100%);box-shadow:0 9px 22px #4d805234,inset 0 1px 0 #ffffffd4;overflow:hidden}
+.brand-mark:before{content:"";position:absolute;inset:3px;border:1px solid #ffffff6b;border-radius:15px;pointer-events:none}
+.brand-mark:after{inset:auto;right:5px;bottom:5px;width:7px;height:7px;border:2px solid #e9f3d6;border-radius:50%;background:#e58b55;box-shadow:0 1px 4px #814a2c50}
+.brand-mark svg{position:relative;width:47px;height:47px;overflow:visible}
+.brand-mark .mark-route{fill:none;stroke:#236b4b;stroke-width:2.35;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:86;stroke-dashoffset:86;animation:brand-route-draw 1.05s .14s cubic-bezier(.2,.8,.2,1) forwards}
+.brand-mark .mark-route-bottom{stroke:#548653}
+.brand-mark .mark-route-arrow{fill:none;stroke:#236b4b;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.brand-mark .mark-route-arrow-bottom{stroke:#db8250}
+.brand-mark .mark-bowl{fill:#fff9e8;stroke:#286b4a;stroke-width:1.6;stroke-linejoin:round}
+.brand-mark .mark-rim{fill:none;stroke:#286b4a;stroke-width:1.8;stroke-linecap:round}
+.brand-mark .mark-sprout{fill:none;stroke:#377b4e;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transform-origin:24px 22px;animation:sprout-nod 4.8s ease-in-out infinite}
+.brand-mark .mark-seed{fill:#e58b55;stroke:#fff9e8;stroke-width:1.1;transform-origin:24px 27px;animation:seed-glow 3.2s ease-in-out infinite}
+.brand:hover .brand-mark{transform:translateY(-2px) rotate(-3deg) scale(1.04);box-shadow:0 13px 27px #4d805244,inset 0 1px 0 #ffffffd4}
+.brand:hover .brand-mark .mark-route{animation:brand-route-draw .72s cubic-bezier(.2,.8,.2,1) both}
+.brand-copy{gap:0}
+.brand-word>b,.brand-word>em{font-size:17px!important;letter-spacing:-.06em!important}
+.brand-word>em{color:#d09a63}
+.brand small{font-size:6.5px;letter-spacing:.13em}
+.welcome-top .brand-mark,.login-panel>.brand .brand-mark{width:58px;height:58px;flex-basis:58px}
+.welcome-top .brand-mark svg,.login-panel>.brand .brand-mark svg{width:51px;height:51px}
+@keyframes brand-route-draw{to{stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){.brand-mark .mark-route,.brand-mark .mark-sprout,.brand-mark .mark-seed{animation:none!important;stroke-dashoffset:0!important}.brand:hover .brand-mark{transform:none}}
