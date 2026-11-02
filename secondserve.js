@@ -147,14 +147,17 @@ function renderEvents(events) {
 }
 function renderRuns(runs) {const host=$('agentRunList');host.replaceChildren();if(!runs.length){host.innerHTML='<span class="run-chip"><i></i> Standing by</span>';return;}for(const r of runs){const chip=document.createElement('span');chip.className='run-chip';chip.innerHTML=`<i></i>${safe(r.type.toUpperCase())} · ${safe(r.status.toUpperCase())}`;host.append(chip);}}
 async function refresh() { try { render(await request('/api/secondserve/state')); } catch(e) { toast(e.message); } }
-function setView(view) {
+function setView(view,navKey=null) {
   state.view=view;
   $('nearby').hidden=view!=='nearby';
   $('operationsWorkspace').hidden=!['operations','provider'].includes(view);
   document.querySelectorAll('[data-operations]').forEach(el=>{el.hidden=view!=='operations';});
   $('operationsWorkspace').classList.toggle('provider-mode',view==='provider');
   document.querySelectorAll('[data-role-nav]').forEach(link=>{link.hidden=link.dataset.roleNav!==state.role;});
-  document.querySelectorAll('.sidebar nav a[data-view]').forEach(a=>a.classList.toggle('active',a.dataset.view===view));
+  const defaultNavKey=state.role==='neighbor'?'nearby':state.role==='donor'?'inventory':state.role==='recipient'?'partner':'overview';
+  document.querySelectorAll('.sidebar nav a[data-nav-key]').forEach(a=>a.classList.toggle('active',a.dataset.navKey===(navKey||defaultNavKey)));
+  const modeLabel={neighbor:'COMMUNITY',donor:'FOOD PROVIDER',coordinator:'RESCUE CONTROL',recipient:'PARTNER SPACE'}[state.role]||'WORKSPACE';
+  if($('sidebarModeLabel'))$('sidebarModeLabel').textContent=modeLabel;
   $('viewLabel').textContent=view==='nearby'?'NEARBY FOOD':view==='provider'?'INVENTORY & CLOSEOUT':state.role==='recipient'?'RECIPIENT PARTNER':'RESCUE OPERATIONS';
   if(view==='nearby'){if(!state.listings.length)loadMarketplace();requestAnimationFrame(()=>state.marketMap?.invalidateSize());}
 }
@@ -228,7 +231,7 @@ function openStorefront(item){
   }
   $('storeDialog').showModal();
 }
-function updateBasketBadge(){const count=state.cart.reduce((sum,item)=>sum+item.quantity,0);const badge=$('basketCount');if(badge)badge.textContent=String(count);const button=$('openBasket');if(button)button.setAttribute('aria-label',`Open basket, ${count} items`);}
+function updateBasketBadge(){const count=state.cart.reduce((sum,item)=>sum+item.quantity,0);const badge=$('basketCount');if(badge)badge.textContent=String(count);const sideBadge=$('sidebarBasketCount');if(sideBadge)sideBadge.textContent=String(count);const button=$('openBasket');if(button)button.setAttribute('aria-label',`Open basket, ${count} items`);}
 function cartTotal(){return Math.round(state.cart.reduce((sum,item)=>sum+item.quantity*item.priceTry,0)*100)/100;}
 function distanceLabel(value){const km=Number(value||0);return km<.05?'nearby (demo estimate)':`${km.toFixed(1)} km (approx.)`;}
 function renderBasket(){
@@ -302,7 +305,8 @@ async function loadMarketplace(){
   try{const result=await request('/api/secondserve/nearby',{auth:false});state.listings=result.listings||[];for(const cartItem of state.cart){const live=state.listings.find(item=>item.batchId===cartItem.batchId&&item.purchaseable);cartItem.unavailable=!live;if(live){cartItem.stock=Number(live.quantity);cartItem.priceTry=Number(live.priceTry);cartItem.pickupUntil=live.pickupUntil;}}renderMarketplace();renderBasket();if(!window.L)$('mapCaption').textContent='Map library unavailable · browse the nearby list below.';}
   catch(error){$('marketList').innerHTML=`<div class="empty-state">Could not load listings: ${safe(error.message)}</div>`;}
 }
-document.querySelectorAll('.sidebar nav a[data-view]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();setView(link.dataset.view);if(link.dataset.view==='operations'&&link.hash)document.querySelector(link.hash)?.scrollIntoView({behavior:'smooth'});}));
+document.querySelectorAll('.sidebar nav a[data-view]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();setView(link.dataset.view,link.dataset.navKey);if(link.hash&&link.dataset.navKey!=='nearby')document.querySelector(link.hash)?.scrollIntoView({behavior:'smooth'});}));
+document.querySelectorAll('.sidebar nav a[data-action]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();setView('nearby',link.dataset.navKey);if(link.dataset.action==='donate')$('shareFood').click();if(link.dataset.action==='basket')$('openBasket').click();}));
 $('enterWorkspace').onclick=()=>{ $('welcomeScreen').hidden=true; $('loginScreen').hidden=false; window.scrollTo({top:0,behavior:'smooth'}); };
 $('backToWelcome').onclick=()=>{ $('loginScreen').hidden=true; $('welcomeScreen').hidden=false; window.scrollTo({top:0,behavior:'smooth'}); };
 document.querySelectorAll('[data-offer-filter]').forEach(button=>button.addEventListener('click',()=>{state.offerFilter=button.dataset.offerFilter;document.querySelectorAll('[data-offer-filter]').forEach(item=>item.classList.toggle('active',item===button));renderMarketplace();}));
