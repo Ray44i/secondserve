@@ -29,7 +29,7 @@ Meta Muse Spark (opt-in multimodal and structured-text assistance), Node.js, SQL
 ## Links
 
 - Public source repository: <https://github.com/Ray44i/tremoroom>
-- Demo video: upload `SecondServe-3-minute-demo.mp4` from the project root to the hackathon submission form.
+- Demo video: <https://github.com/Ray44i/tremoroom/blob/main/SecondServe-3-minute-demo.mp4>
 
 ## Claims to avoid
 
@@ -37,3 +37,4 @@ Meta Muse Spark (opt-in multimodal and structured-text assistance), Node.js, SQL
 - Do not say checkout charges a card or reserves real food.
 - Do not claim measured food-waste, carbon, or health outcomes; the prototype does not have a validated baseline.
 - Do not say AI verifies allergens, safety, freshness, or the full quantity available.
+
