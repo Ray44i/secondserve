@@ -163,3 +163,92 @@
 .side-foot>i{width:6px;height:6px;box-shadow:0 0 0 4px #74cb8b18}
 .side-foot small{color:#84988a;font-size:9px}
 @media(max-width:800px){.sidebar{gap:7px;padding:9px 12px}.sidebar>.brand{padding:0;gap:8px}.sidebar .brand-mark{width:36px;height:36px;flex-basis:36px;border-radius:12px}.sidebar .brand-mark svg{width:31px;height:31px}.sidebar .brand-copy{font-size:12px}.sidebar .brand small{font-size:6px}.sidebar-mode{margin:0;padding:7px 9px;border-radius:8px}.sidebar-mode small{font-size:6px}.sidebar-mode b{font-size:8px}.sidebar-mode>i{display:none}.sidebar .nav-label{display:none}.sidebar .side-foot,.sidebar-quote{display:none}.sidebar .sidebar-nav{display:flex;order:3;width:100%;gap:5px;overflow-x:auto;padding:1px 0 3px}.sidebar-nav a{flex:none;grid-template-columns:24px auto auto;min-height:35px;padding:4px 7px!important;gap:6px!important;border-radius:8px!important;font-size:8px!important}.nav-icon{width:23px;height:23px;border-radius:7px;font-size:11px}.nav-tag,.nav-count{min-width:19px;height:16px;font-size:6px}.nav-chevron{font-size:8px}}
+
+/* More ownable SecondServe wordmark: a looping route grows into a shared table. */
+.brand-mark{width:50px;height:50px;flex-basis:50px;border-radius:17px;background:radial-gradient(circle at 23% 16%,#fff5d7 0,#d9edb9 37%,#8dc49c 100%);box-shadow:0 10px 24px #7bad7d35,inset 0 1px #ffffffc2;transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s}
+.brand:hover .brand-mark{transform:rotate(-5deg) scale(1.055);box-shadow:0 13px 27px #7bad7d46,inset 0 1px #ffffffc2}
+.brand-mark:after{inset:4px;border-color:#ffffff80;border-radius:13px}
+.brand-mark svg{width:43px;height:43px}
+.brand-mark .mark-route{stroke-dasharray:84;stroke-dashoffset:0;transition:stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1)}
+.brand-mark .mark-sprout{transform-origin:24px 22px;animation:sprout-nod 4.8s ease-in-out infinite}
+.brand-mark .mark-seed{transform-origin:24px 27px;animation:seed-glow 3.2s ease-in-out infinite}
+.brand:hover .brand-mark .mark-route{stroke-dashoffset:84}
+.mark-loop,.mark-loop-bottom,.mark-arrow,.mark-arrow-bottom{display:none}
+.mark-route{fill:none;stroke:#244f35;stroke-width:3.15;stroke-linecap:round;stroke-linejoin:round}
+.mark-route-arrow{fill:none;stroke:#244f35;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.mark-route-arrow-bottom{stroke:#d87846}
+.mark-sprout{fill:none;stroke:#3b7b4d;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.mark-seed{fill:#e99155;stroke:#fff8e4;stroke-width:1.1}
+.brand-copy{font-size:15px;letter-spacing:0}
+.brand-word{display:flex;align-items:baseline;gap:0;line-height:1}
+.brand-word>b{color:#f1f6ef;font:800 15px Manrope,sans-serif;letter-spacing:-.055em}
+.brand-word>em{margin-left:3px;color:#c9e39a;font:800 15px Manrope,sans-serif;font-style:normal;letter-spacing:-.055em}
+.brand small{margin-top:5px;font-size:7px;letter-spacing:.16em}
+.welcome-top .brand-mark,.login-panel>.brand .brand-mark{width:54px;height:54px;flex-basis:54px}
+.welcome-top .brand-mark svg,.login-panel>.brand .brand-mark svg{width:47px;height:47px}
+.map-price-pin{display:grid;justify-items:center;align-content:center;gap:1px;min-width:91px;height:37px;padding:2px 8px;border-radius:12px;background:linear-gradient(135deg,#318157,#236441);box-shadow:0 7px 17px #173c2d45;font-size:10px;animation:pin-pop .46s cubic-bezier(.18,.8,.28,1.18) both;animation-delay:calc(var(--pin-order,0) * 22ms)}
+.map-price-pin:after{background:#236441;box-shadow:2px 2px 5px #173c2d25}
+.map-price-pin.discount{background:linear-gradient(135deg,#d39a4c,#b67330)}
+.map-price-pin.discount:after{background:#b67330}
+.map-price-pin b{position:relative;z-index:1;font-size:10px;line-height:1}
+.map-price-pin small{position:relative;z-index:1;display:block;width:auto;height:auto;border-radius:0;background:transparent;color:#ffffffdf;font:6px Consolas,monospace;letter-spacing:.04em}
+.leaflet-marker-icon.map-selected .map-price-pin{z-index:700!important;transform:translateY(-4px) scale(1.1);box-shadow:0 0 0 4px #f3d59888,0 10px 22px #173c2d55}
+.map-offer-leaflet .leaflet-popup-content-wrapper{overflow:hidden;padding:0;border:1px solid #e4eadf;border-radius:16px;background:#fff;box-shadow:0 18px 44px #1839222b}
+.map-offer-leaflet .leaflet-popup-content{width:280px!important;margin:0}
+.map-offer-leaflet .leaflet-popup-tip{border:1px solid #e4eadf;background:#fff;box-shadow:2px 2px 3px #18392210}
+.map-offer-leaflet .leaflet-popup-close-button{z-index:4;top:8px!important;right:8px!important;display:grid;width:27px!important;height:27px!important;place-items:center;border:1px solid #ffffffb5;border-radius:50%;background:#17291dcc;color:#fff!important;font:20px/1 'DM Sans',sans-serif!important}
+.map-offer-popup{overflow:hidden;width:280px;color:#294233}
+.map-popup-visual{position:relative;display:grid;place-items:center;height:112px;overflow:hidden;background:radial-gradient(circle at 52% 42%,#fff7dc,#edf4e4 52%,#e5eee0)}
+.map-popup-visual img{width:100%;height:100%;object-fit:cover}
+.map-popup-visual>span:not(.map-popup-badge){font-size:48px;filter:drop-shadow(0 8px 10px #1937241b);animation:food-drift 3.4s ease-in-out infinite}
+.map-popup-badge{position:absolute;top:10px;left:10px;padding:6px 9px;border:1px solid #ffffffb0;border-radius:20px;background:#bb7c34ed;color:#fff;font:8px Consolas,monospace;letter-spacing:.08em;box-shadow:0 4px 10px #243a2822}
+.map-popup-badge.is-free{background:#27724b}
+.map-popup-body{padding:12px 13px 10px}
+.map-popup-provider{display:flex;align-items:center;gap:7px}
+.map-popup-provider>i{display:grid;width:26px;height:26px;flex:0 0 26px;place-items:center;border:1px solid #dce8d8;border-radius:9px;background:#f0f5e9;color:#477950;font:700 8px Manrope,sans-serif;font-style:normal}
+.map-popup-provider>span{display:grid;flex:1;gap:2px;min-width:0}
+.map-popup-provider>span>b{overflow:hidden;color:#3e5f46;font:700 10px Manrope,sans-serif;text-overflow:ellipsis;white-space:nowrap}
+.map-popup-provider>span>small{color:#8b978b;font:7px Consolas,monospace;letter-spacing:.06em}
+.map-popup-provider>strong{color:#276741;font:800 14px Manrope,sans-serif;white-space:nowrap}
+.map-popup-body h3{margin:9px 0 7px;color:#213b2a;font:750 15px/1.2 Manrope,sans-serif;letter-spacing:-.035em}
+.map-popup-facts{display:grid;gap:5px;padding:8px 9px;border:1px solid #edf0e9;border-radius:9px;background:#fafbf7;color:#66766a;font-size:9px}
+.map-popup-facts span{display:flex;align-items:baseline;gap:4px}
+.map-popup-facts b{color:#375d40}
+.map-popup-actions{display:flex;gap:7px;margin-top:9px}
+.map-popup-actions button{min-height:36px;padding:0 9px;border:1px solid #dce8d9;border-radius:8px;background:#fff;color:#426449;font:700 9px 'DM Sans',sans-serif;cursor:pointer;transition:transform .18s,background .18s}
+.map-popup-actions button:hover{transform:translateY(-1px);background:#f1f7ed}
+.map-popup-actions .map-popup-view{flex:1;text-align:left}
+.map-popup-actions .map-popup-view span{float:right;color:#a56f38}
+.map-popup-actions .map-popup-add{border-color:#286a44;background:#286a44;color:#fff}
+.map-popup-actions .map-popup-add:hover{background:#1e5737}
+.map-popup-demo{display:block;margin-top:8px;color:#838f84;font:7px Consolas,monospace;letter-spacing:.06em}
+.market-card{animation:offer-arrive .42s cubic-bezier(.2,.7,.25,1) both;animation-delay:calc(var(--card-order,0) * 28ms);transition:border-color .2s,transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s}
+.market-card:hover,.market-card:focus-visible,.market-card.selected{transform:translateY(-3px);border-color:#83ae83;box-shadow:0 12px 28px #19392414;outline:none}
+.market-card:focus-visible{box-shadow:0 0 0 3px #a9d39c75,0 12px 28px #19392414}
+.market-card .market-card-visual{overflow:hidden}
+.market-card .market-card-visual img{transition:transform .55s cubic-bezier(.2,.7,.2,1)}
+.market-card:hover .market-card-visual img{transform:scale(1.045)}
+.basket-food-art{position:relative;overflow:hidden}
+.basket-food-art>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.basket-food-art>small{position:relative;z-index:1;box-shadow:0 2px 8px #1b342b15}
+.basket-button.basket-pulse span,.sidebar .nav-count.basket-pulse{animation:basket-bump .55s cubic-bezier(.2,.9,.25,1.3)}
+.basket-row{animation:cart-arrive .34s cubic-bezier(.2,.75,.25,1) both;animation-delay:calc(var(--row-order,0) * 45ms)}
+.basket-row:hover{border-color:#c9ddc4;box-shadow:0 8px 22px #203a2b10;transform:translateY(-1px)}
+.checkout-dialog[open]{animation:dialog-arrive .28s cubic-bezier(.16,.84,.25,1) both}
+.checkout-dialog[open]::backdrop{animation:backdrop-arrive .24s ease-out both}
+.receipt-mark{animation:receipt-arrive .48s cubic-bezier(.18,.9,.28,1.2) both}
+.toast.show{animation:toast-arrive .26s cubic-bezier(.2,.8,.25,1) both}
+.sidebar-nav a .nav-icon{transition:transform .2s cubic-bezier(.2,.8,.2,1),background .2s,color .2s}
+.sidebar-nav a:hover .nav-icon{transform:rotate(-7deg) scale(1.06)}
+@keyframes pin-pop{0%{opacity:0;transform:translateY(-12px) scale(.86)}75%{transform:translateY(2px) scale(1.035)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes offer-arrive{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes food-drift{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-4px) rotate(2deg)}}
+@keyframes basket-bump{0%{transform:scale(1)}35%{transform:scale(1.38) rotate(-5deg)}70%{transform:scale(.94) rotate(3deg)}100%{transform:scale(1)}}
+@keyframes cart-arrive{0%{opacity:0;transform:translateY(9px) scale(.985)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes dialog-arrive{0%{opacity:0;transform:translateY(14px) scale(.98)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes backdrop-arrive{from{background:rgb(12 28 17 / 0)}to{background:rgb(12 28 17 / 48%)}}
+@keyframes receipt-arrive{0%{opacity:0;transform:scale(.62) rotate(-12deg)}75%{transform:scale(1.12) rotate(4deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes toast-arrive{from{opacity:0;transform:translateY(9px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes sprout-nod{0%,86%,100%{transform:rotate(0)}91%{transform:rotate(-7deg)}96%{transform:rotate(5deg)}}
+@keyframes seed-glow{0%,100%{transform:scale(1);filter:drop-shadow(0 0 0 #e9915500)}50%{transform:scale(1.12);filter:drop-shadow(0 0 4px #e991557a)}}
+@media(prefers-reduced-motion:reduce){.brand-mark,.brand-mark .mark-sprout,.brand-mark .mark-seed,.map-price-pin,.market-card,.map-popup-visual>span:not(.map-popup-badge),.basket-row,.checkout-dialog[open],.checkout-dialog[open]::backdrop,.receipt-mark,.toast.show,.sidebar-nav a .nav-icon{animation:none!important;transition:none!important}}
