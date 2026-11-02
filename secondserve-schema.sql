@@ -70,7 +70,8 @@ CREATE TABLE IF NOT EXISTS provider_batches (
   food_condition TEXT NOT NULL, expiry_type TEXT NOT NULL, expiry_at TEXT,
   business_attested INTEGER NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL,
   closeout_minute INTEGER NOT NULL DEFAULT 1260,
-  market_offer_id TEXT
+  market_offer_id TEXT,
+  photo_data_url TEXT
 );
 CREATE TABLE IF NOT EXISTS provider_market_offers (
   id TEXT PRIMARY KEY, batch_id TEXT NOT NULL UNIQUE REFERENCES provider_batches(id) ON DELETE CASCADE,

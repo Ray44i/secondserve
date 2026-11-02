@@ -10,6 +10,15 @@ const marketCategories = [
   { value:'Prepared meals',label:'Ready meals',icon:'▤' },{ value:'Dairy',label:'Dairy & chilled',icon:'◉' },
   { value:'Pantry',label:'Pantry staples',icon:'▦' },{ value:'Drinks',label:'Drinks',icon:'◌' }
 ];
+const merchantProfiles={
+  'Golden Crust Bakery':{name:'Golden Crust',mark:'GC'},'Demo Bakery A':{name:'Moda Fırını',mark:'MF'},
+  'Demo Market B':{name:'Yeldeğirmeni Pazarı',mark:'YP'},'Demo Kitchen C':{name:'Osmanağa Sofrası',mark:'OS'},
+  'Demo Grocer D':{name:'Caferağa Gıda',mark:'CG'},'Demo Bakery E':{name:'Fenerbahçe Fırını',mark:'FF'},
+  'Demo Produce F':{name:'Moda Bahçesi',mark:'MB'},'Demo Grocer G':{name:'Mahalle Kileri',mark:'MK'},
+  'Demo Market H':{name:'Kadıköy Kiler',mark:'KK'},'Demo Juice Bar I':{name:'Meyve Barı',mark:'MY'},
+  'Demo Cafe J':{name:'Moda Kahve',mark:'MK'},'Community donor':{name:'Komşu Paylaşımı',mark:'KP'}
+};
+function merchantProfile(name){return merchantProfiles[name]||{name,mark:String(name||'S').trim().split(/\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()};}
 if(state.profile){state.userLocation=NEIGHBORHOODS[state.profile.neighborhood]?.lat?{lat:NEIGHBORHOODS[state.profile.neighborhood].lat,lon:NEIGHBORHOODS[state.profile.neighborhood].lon}:DEMO_CENTER;state.locationSource='profile';}
 $('marketRadius').value=String(state.radiusKm);
 const fmtNum = (n) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(Number(n || 0));
@@ -175,7 +184,10 @@ function renderMarketplace(){
     const price=item.offerType==='donation'?'FREE':`${fmtNum(item.priceTry)} ₺`;
     const pickLabel=item.recommended?`<div class="recommendation-badge">✦ RECOMMENDED FOR YOU · ${safe(item.recommendationReason)}</div>`:'';
     const category=marketCategories.find(value=>value.value===item.category);
-    card.innerHTML=`<div>${item.photoDataUrl?`<img class="market-photo-preview" src="${safe(item.photoDataUrl)}" alt="Photo of ${safe(item.name)}" loading="lazy">`:''}${pickLabel}<div class="market-card-labels"><span class="category-pill"><i aria-hidden="true">${category?.icon||'•'}</i>${safe(category?.label||item.category)}</span><span class="market-type ${item.offerType==='discounted_sale'?'discount':''}">${item.offerType==='donation'?'FREE DONATION':item.discountPercent?`${item.discountPercent}% OFF`:'DISCOUNTED'}</span></div><h3>${safe(item.name)}</h3><div class="market-business">${safe(item.business)}</div><p>${safe(item.note)}</p></div><div class="market-price">${price}<small>${item.regularPriceTry?`WAS ${fmtNum(item.regularPriceTry)} ₺`:(item.offerType==='donation'?'NO COST':'DEMO PRICE')}</small></div><div class="market-card-foot"><span><b>${fmtNum(item.quantity)} ${safe(item.unit)}</b> left</span><span>${safe(item.location)}</span><span><b>${distanceLabel(item.distanceKm)}</b></span><span>Pickup by ${when(item.pickupUntil)}</span></div>`;
+    const merchant=merchantProfile(item.business);
+    const foodArt={Bakery:'🥐',Produce:'🥬','Prepared meals':'🍲',Dairy:'🥛',Pantry:'🫙',Drinks:'🧃',Other:'🍽️'}[item.category]||'🍽️';
+    const visual=item.photoDataUrl?`<div class="market-card-visual"><img src="${safe(item.photoDataUrl)}" alt="Provider photo of ${safe(item.name)}" loading="lazy"><span class="photo-label">PROVIDER PHOTO</span></div>`:`<div class="market-card-visual market-demo-art art-${category?.value?.toLowerCase().replaceAll(' ','-')||'other'}"><span class="visual-illustration" aria-hidden="true">${foodArt}</span><span class="demo-art-note">SIMULATED LISTING ART</span></div>`;
+    card.innerHTML=`${visual}<div class="market-card-main">${pickLabel}<div class="market-card-labels"><span class="category-pill"><i aria-hidden="true">${category?.icon||'•'}</i>${safe(category?.label||item.category)}</span><span class="market-type ${item.offerType==='discounted_sale'?'discount':''}">${item.offerType==='donation'?'FREE DONATION':item.discountPercent?`${item.discountPercent}% OFF`:'DISCOUNTED'}</span></div><h3>${safe(item.name)}</h3><div class="market-business"><i aria-hidden="true">${safe(merchant.mark)}</i><span><b>${safe(merchant.name)}</b><small>SIMULATED LOCAL BUSINESS</small></span></div><p>${safe(item.note)}</p></div><div class="market-price">${price}<small>${item.regularPriceTry?`WAS ${fmtNum(item.regularPriceTry)} ₺`:(item.offerType==='donation'?'NO COST':'DEMO PRICE')}</small></div><div class="market-card-foot"><span><b>${fmtNum(item.quantity)} ${safe(item.unit)}</b> left</span><span>${safe(item.location)}</span><span><b>${distanceLabel(item.distanceKm)}</b></span><span>Pickup by ${when(item.pickupUntil)}</span></div>`;
     if(item.purchaseable&&state.role==='neighbor'){
       const buy=document.createElement('div');buy.className='quick-buy';const quantity=document.createElement('input');quantity.type='number';quantity.min='1';quantity.step='1';quantity.max=String(item.quantity);quantity.value='1';quantity.setAttribute('aria-label',`Quantity of ${item.name} to buy for pickup`);
       const action=document.createElement('button');action.className='button primary';action.type='button';action.textContent='Add to basket';action.title='Add this offer to your basket; no order is placed yet.';
@@ -202,7 +214,7 @@ function openStorefront(item){
   const offers=state.listings.filter(listing=>listing.business===item.business).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
   const isCommunity=item.business==='Community donor';
   $('storeKicker').textContent=isCommunity?'COMMUNITY DONOR · LOCAL DEMO':'PROVIDER PROFILE · LOCAL DEMO';
-  $('storeTitle').textContent=item.business;
+  const merchant=merchantProfile(item.business);$('storeTitle').textContent=merchant.name;$('storeTitle').dataset.rawName=item.business;document.querySelector('.store-avatar').textContent=merchant.mark;
   $('storeSubtitle').textContent=isCommunity?'Community listings shared near this pickup area.':'Nearby surplus from this provider, with pickup details for each offer.';
   $('storeBannerLocation').textContent=item.location||'Nearby pickup';
   $('storeFacts').innerHTML=`<div><small>PICKUP AREA</small><b>${safe(item.location)}</b></div><div><small>APPROX. DISTANCE</small><b>${distanceLabel(item.distanceKm)}</b></div><div><small>ACTIVE OFFERS</small><b>${offers.length}</b></div><div><small>NETWORK STATUS</small><b>Demo listing</b></div>`;
@@ -369,7 +381,8 @@ $('productionForm').onsubmit=async event=>{
   const body={foodName:$('batchFoodName').value.trim(),category:$('batchCategory').value,openingQuantity:Number($('batchOpening').value),unit:$('batchUnit').value,
     retailPriceTry:Number($('batchPrice').value),discountPercent:Number($('batchDiscount').value),closeoutTime:$('batchCloseoutTime').value,pickupLocation:$('batchPickupLocation').value.trim(),pickupDeadline:new Date($('batchPickupDeadline').value).toISOString(),
     allergens:$('batchAllergens').value.trim(),storage:$('batchStorage').value,condition:'reported_intact',expiryType,
-    expiryAt:expiryType!=='not_applicable'&&expiryDate?new Date(`${expiryDate}T23:59:00`).toISOString():null,attested:$('batchAttested').checked};
+    expiryAt:expiryType!=='not_applicable'&&expiryDate?new Date(`${expiryDate}T23:59:00`).toISOString():null,attested:$('batchAttested').checked,
+    photoDataUrl:$('batchPhotoShare').checked?state.batchPhotoDataUrl:null};
   $('providerStatus').textContent='Saving the morning batch…';
   try{const result=await request('/api/secondserve/provider/batches',{method:'POST',body});$('providerStatus').textContent=`Batch started. ${fmtNum(result.batch.openingQuantity)} ${result.batch.unit} will be reconciled with POS sales.`;state.providerBatches.unshift(result.batch);renderProviderBatches();$('batchFoodName').value='';$('batchOpening').value='';$('batchPrice').value='';$('batchAllergens').value='';$('batchAttested').checked=false;toast('Morning batch started. POS sales will reduce available stock.');}
   catch(error){$('providerStatus').textContent=error.message;toast(error.message);}

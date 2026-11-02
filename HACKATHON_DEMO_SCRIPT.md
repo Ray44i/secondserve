@@ -18,7 +18,7 @@
 
 ### 0:20–0:55 — Provider creates a reliable batch
 
-**Show:** Provider → Inventory & closeout. Select the cookie photo and request the Muse Spark product/count suggestion only if the API is enabled and you are comfortable using credits. Pause on the consent and review step.
+**Show:** Provider → Inventory & closeout. Select the cookie photo. If the API is enabled and you are comfortable using credits, separately consent and request the Muse Spark product/count suggestion. Opt in to show the actual provider photo on the nearby offer. Pause on the review step.
 
 **Say:** “Muse Spark can suggest the visible product and estimate countable items in-frame. The provider reviews the suggestion and confirms the real batch. The model cannot see hidden stock or verify ingredients, allergens, freshness, or safe handling.”
 

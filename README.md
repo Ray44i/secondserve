@@ -18,7 +18,7 @@ Open <http://127.0.0.1:4173>. The SQLite demo database is created under ignored 
 
 For a timed presentation, see [HACKATHON_DEMO_SCRIPT.md](HACKATHON_DEMO_SCRIPT.md).
 
-1. Choose **Provider** and create a morning batch. If demonstrating Meta AI, select a food photo, review the consent text, check consent, and explicitly click **Identify product & estimate count**. Review or correct the draft; AI does not verify the full batch or food-safety facts.
+1. Choose **Provider** and create a morning batch. If demonstrating Meta AI, select a food photo, review the consent text, check Meta consent, and explicitly click **Identify product & estimate count**. Review or correct the draft; AI does not verify the full batch or food-safety facts. Separately opt in if you want the provider photo shown on the nearby offer.
 2. Enter price, discount, pickup deadline, handling/date/allergen facts, confirm the provider attestation, and start the batch.
 3. Record a simulated POS sale. The provider ledger shows remaining units. Use **Publish remaining stock now** for a live demo, or let the local scheduler publish at the chosen closeout time.
 4. Switch to **User**. Click a listing or map pin to view the provider storefront and its active offers, then add a product to the basket.
@@ -28,7 +28,7 @@ For a timed presentation, see [HACKATHON_DEMO_SCRIPT.md](HACKATHON_DEMO_SCRIPT.m
 ## Provider closeout loop
 
 1. Choose **Provider** and enter a morning batch. A resized photo can optionally ask Muse Spark to suggest the product/category and estimate countable units visible in-frame; it prefills the quantity and unit when confidence is medium or high. Confirm that the photo shows the complete morning batch. The visual estimate cannot include hidden/off-frame stock or verify safety. Add the price, pickup deadline, and provider-confirmed handling/date/allergen facts.
-2. In the prototype, use **Record sale event** to simulate a POS sale. A real POS connector would send these idempotent sale events automatically; no register vendor is connected here.
+2. In the prototype, use **Record sale event** to simulate a POS sale. A provider may separately opt in to show their food photo on the offer; the photo is stored in local SQLite and is not sent to Meta unless the separate AI consent/action is used. A real POS connector would send these idempotent sale events automatically; no register vendor is connected here.
 3. The local server runs the 21:00 Istanbul closeout. It reconciles opening stock minus POS sales, then adds the remaining eligible quantity to the nearby discounted offers. Restarting the server also runs any missed closeout.
 4. Choose **User** to see the offer. Open its storefront, add it to the basket, and continue through the clearly labeled demo checkout. Completing the order reduces the same inventory count; it does not take payment or create a real booking.
 
