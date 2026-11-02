@@ -435,7 +435,7 @@ async function secondServeRoute(request, response, url) {
       secondServeActor(request, ['donor']); return sendJson(response, 200, { batches:getProviderBatches(secondServeDb), closeoutTime:'21:00', timezone:'Europe/Istanbul', salesSource:'simulated POS feed' });
     }
     if (method === 'POST' && path === '/api/secondserve/provider/batches') {
-      const actor=secondServeActor(request,['donor']),body=await readJson(request,8192);
+      const actor=secondServeActor(request,['donor']),body=await readJson(request,2_200_000);
       return sendJson(response,201,{batch:createProviderBatch(secondServeDb,body,actor.role),salesSource:'simulated POS feed'});
     }
     const providerReleaseRoute=path.match(/^\/api\/secondserve\/provider\/batches\/([^/]+)\/release-now$/);

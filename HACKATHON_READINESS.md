@@ -47,7 +47,7 @@ The event slide you shared says to submit three things by the deadline:
 
 ## Next actions, in order
 
-1. **Make the demo data fresh.** The cookie offer currently has one piece left, but its pickup deadline has passed. Create a new provider batch with a future deadline; do not change the prior stock history to make it look fresh.
+1. **Fresh cookie demo offer is staged locally.** It uses your cookie photo and fictional demo data: four opening pieces, three simulated POS sales, one piece remaining, ₺45 regular price / ₺31.50 demo price, with pickup by November 3 at 8:00 PM Istanbul time. The earlier expired batch remains unchanged. This is not a real sale or a claim that real food is available.
 2. **Rehearse the recovery story.** Load the cancellation recovery scenario, run matching, show the fallback recipient, and record the verified pickup. Use only the prepared demo scenario.
 3. **Show Meta AI once if ready.** Use a non-sensitive product photo, read the consent text on camera, make one request only, review/correct the draft, and never show the API key or billing page. If the API is unavailable, explain that the call is optional; do not pretend a model response occurred.
 4. **Record the video.** Follow the 3-minute timing in the script. Show the product working, state the simulated boundaries, review the export, and upload it.
