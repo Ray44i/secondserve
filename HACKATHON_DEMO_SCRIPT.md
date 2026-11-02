@@ -10,41 +10,41 @@
 
 ## Timed walkthrough
 
-### 0:00–0:20 — The problem and the promise
+### 0:00–0:18 — The problem and the promise
 
 **Show:** SecondServe welcome screen, then the role selection.
 
-**Say:** “Good food is thrown away while people nearby could use it. SecondServe gives providers a simple way to account for surplus, then routes what remains to nearby people or community partners. This is a working local prototype; the network and transactions shown here are simulated.”
+**Say:** “Good food can go to waste while nearby people and community organizations could use it. SecondServe is a neighborhood surplus marketplace: providers list free or discounted food, nearby people find it, and rescue partners can take what a listing cannot reach. This prototype uses fictional Kadıköy records; it is not a live network.”
 
-### 0:20–0:55 — Provider creates a reliable batch
+### 0:18–0:48 — AI drafts; provider stays responsible
 
 **Show:** Provider → intake. Enter: “Fictional demo batch: 24 chocolate chip cookies prepared this morning, 6 sold, 18 remain. Pickup today at 8:00 PM. Storage ambient. No date or allergen facts stated.” Click **Draft from note with Muse Spark** once and pause on the returned draft and missing-facts list. The confirmed response extracted 18 pieces; that quantity was explicitly supplied in the note, not inferred from sales.
 
 **Say:** “Muse Spark turns a provider’s note into a structured draft and flags missing fields. It does not create an offer, calculate stock from sales, or verify physical quantities, allergens, dates, freshness, or safe handling. The provider confirms the facts; deterministic rules handle stock and eligibility.”
 
-### 0:55–1:20 — Inventory follows actual sales
+### 0:48–1:15 — Inventory follows recorded sales
 
 **Show:** Prepared batch ledger; record one simulated POS sale and point to the remaining quantity. Show the timed closeout or the safe ‘Publish remaining stock now’ demo action if the schedule is not due.
 
 **Say:** “Stock accounting is deterministic: opening quantity minus recorded sales and customer pickups. At the provider’s release time, eligible leftovers become an offer at the provider’s chosen discount. There is no live POS connection in this prototype.”
 
-### 1:20–1:55 — A neighbor finds and reviews food
+### 1:15–1:45 — A neighbor finds nearby food
 
 **Show:** User → Nearby food. Use the map/list, open the Golden Crust storefront, and show the offer, pickup area, time, and savings. Add one item and show the basket without submitting it.
 
-**Say:** “A neighbor can compare free donations and discounted food, inspect the provider’s other offers, and review pickup details before continuing. Short distances are demo estimates based on the selected area.”
+**Say:** “The marketplace is designed for any neighborhood that has participating providers. Here the Kadıköy pins and offers are sample data; the map makes free and discounted food, stock, distance, and pickup time easy to compare.”
 
-### 1:55–2:35 — Rescue coordination handles a failed pickup
+### 1:45–2:38 — Rescue coordination recovers a failed pickup
 
 **Show:** Owner workspace → load the recovery scenario → run matching. Show the eligible recipient, then acceptance, cancellation, rerouting, and verified pickup. Use the prepared scenario rather than inventing a live partner.
 
 **Say:** “SecondServe also supports partner rescue. The coordinator reviews eligible recipients, and if a pickup falls through, the system can reroute the offer. A cancellation alone does not count as impact; only the quantity recorded at verified pickup enters the rescued-food ledger.”
 
-### 2:35–3:00 — Impact and close
+### 2:38–3:00 — Impact and close
 
 **Show:** The new four-step impact journey, the verified impact ledger, and the public GitHub repository. Point out that the local demo data is simulated and that the ledger only counts quantities after pickup is verified.
 
-**Say:** “The goal is to make surplus measurable and recoverable, from provider inventory to verified handoff. This prototype demonstrates that workflow with opt-in Meta AI assistance, deterministic inventory rules, and a human-confirmed rescue process. Thank you.”
+**Say:** “SecondServe connects nearby discovery with a recovery path when pickup plans fail. Only a human-confirmed handoff belongs in the impact ledger. These quantities and partners are simulated in this prototype; we do not claim a real rescue yet. Thank you.”
 
 ## Recording checks
 

@@ -24,6 +24,13 @@ SecondServe is a solo-builder, local prototype for coordinating surplus food fro
 
 The project code is not production-ready by design: it uses a local SQLite database, simulated organizations and transactions, and demo role selectors. Describe it as a prototype in the video and submission.
 
+## Final scope decision for the deadline
+
+- **Product story:** a neighborhood surplus marketplace that communities can adopt; households and providers offer free or discounted surplus, nearby people discover it, and rescue partners can receive eligible offers.
+- **What this build proves:** the end-to-end workflow in a Kadıköy sample network, including consented Meta AI drafting, deterministic inventory/matching rules, cancellation recovery, and pickup verification.
+- **What this build does not claim:** live partner participation, public multi-user accounts, card payment, live POS, or a real rescue event. These require external people, accounts, and deployment; adding rushed mock integrations would not make the impact real.
+- **Final call:** stop feature expansion. Record the clear three-minute story, label all sample outcomes, and submit the public repo plus video and CV form before the deadline. Only add a real impact claim if a consenting provider and recipient complete and verify a real pickup.
+
 ## Evidence against the judging rubric
 
 These are conservative **readiness estimates**, not predictions of the judges’ scores. They reflect the evidence currently prepared for submission, including that the final video is not recorded yet.
