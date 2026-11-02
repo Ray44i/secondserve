@@ -4,7 +4,7 @@
 
 - Start the local app and confirm it loads at `http://127.0.0.1:4173/secondserve.html`.
 - Use the prepared demo scenario. Do not reset or complete a batch you need later.
-- If showing Muse Spark, verify the local setting is enabled and the consent screen is visible. Make one deliberate request only; it may consume credits. If it fails, show the clearly labeled prepared sample and say the model call is optional.
+- One real `muse-spark-1.3` text extraction has been confirmed with fictional test facts. To make it visible to judges, enter the same fictional note in the Provider intake and click **Draft from note with Muse Spark** once during recording; that request may use credits. Do not imply the model verified a real batch.
 - Do not show `.env`, keys, account billing pages, private addresses, or personal data.
 - Keep the simulated checkout explicit. Do not suggest a real payment or pickup occurred.
 
@@ -18,9 +18,9 @@
 
 ### 0:20–0:55 — Provider creates a reliable batch
 
-**Show:** Provider → Inventory & closeout. Select the cookie photo. If the API is enabled and you are comfortable using credits, separately consent and request the Muse Spark product/count suggestion. Opt in to show the actual provider photo on the nearby offer. Pause on the review step.
+**Show:** Provider → intake. Enter: “Fictional demo batch: 24 chocolate chip cookies prepared this morning, 6 sold, 18 remain. Pickup today at 8:00 PM. Storage ambient. No date or allergen facts stated.” Click **Draft from note with Muse Spark** once and pause on the returned draft and missing-facts list. The confirmed response extracted 18 pieces; that quantity was explicitly supplied in the note, not inferred from sales.
 
-**Say:** “Muse Spark can suggest the visible product and estimate countable items in-frame. The provider reviews the suggestion and confirms the real batch. The model cannot see hidden stock or verify ingredients, allergens, freshness, or safe handling.”
+**Say:** “Muse Spark turns a provider’s note into a structured draft and flags missing fields. It does not create an offer, calculate stock from sales, or verify physical quantities, allergens, dates, freshness, or safe handling. The provider confirms the facts; deterministic rules handle stock and eligibility.”
 
 ### 0:55–1:20 — Inventory follows actual sales
 

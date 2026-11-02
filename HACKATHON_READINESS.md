@@ -31,11 +31,15 @@ These are conservative **readiness estimates**, not predictions of the judges’
 | Criterion | Weight | Readiness now | Strongest evidence | What raises it next |
 | --- | ---: | ---: | --- | --- |
 | Impact | 30% | 6/10 | Surplus discovery, free donations, partner rescue, recovery after cancellation, and verified pickup accounting | Tell one concrete end-to-end story and explain why verified handoff is the impact measure; avoid unsupported savings claims |
-| Meta AI tooling | 25% | 6/10 | User-consented Muse Spark photo/text suggestions and coordinator brief are integrated as bounded advisory steps | Record one successful, deliberate Meta AI interaction; show consent and human review, and state what the model cannot verify |
+| Meta AI tooling | 25% | 6/10 | Muse Spark text/photo drafts and an advisory coordinator brief are integrated; a real Muse Spark text extraction succeeded on Nov 2 using explicitly fictional test facts | Capture the user-visible flow in the video, then show human review and state what the model cannot verify |
 | Technical depth | 20% | 7/10 | Local backend and SQLite, stock reconciliation, safety/eligibility gates, matching, reservations, recovery, and impact events | Show the same batch moving through the system; clearly identify simulated POS, data, and payments |
 | Demo | 25% | 3/10 | The local workflow and a timed 3-minute script exist | Create, review, and upload the actual 3-minute video; rehearse once and keep it within the event limit |
 
 The current evidence-weighted readiness estimate is about **55/100**. The demo score is low because the actual video is missing. This is not an official judge score or a guarantee of ranking.
+
+### Confirmed Meta AI interaction (Nov 2)
+
+One real `muse-spark-1.3` request through the SecondServe backend returned a structured draft from a deliberately fictional note. It extracted “chocolate chip cookies,” `18 pieces`, bakery, ambient storage, “this morning,” and an 8:00 PM pickup time. It returned allergens, condition, date, and preference as unknown/missing. The note itself already stated that 18 pieces remained; the model did **not** calculate 24 produced minus 6 sold. This request created no listing and changed no impact totals. No photo was sent. For judging evidence, reproduce the request once through the visible provider UI if you choose to show it on video; that separate request may use credits.
 
 ## Submission checklist
 
